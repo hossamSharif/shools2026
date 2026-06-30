@@ -5,6 +5,16 @@
 **Status**: Draft
 **Input**: User description: "Phase 1: School Fee Accounting (System of Record) — multi-tenant Arabic/RTL SaaS that schools use to manage the accounting side of student fees and school expenses, including school structure, the canonical set of money events, printable statements, bursar reports, the admin dashboard, roles, subscription and SMS-credit state, and the reminder engine that sends SMS to guardians."
 
+## Clarifications
+
+### Session 2026-06-30
+
+- Q: Expected scale (students per school, number of schools)? → A: Medium — up to ~2,000 students per school and ~100 schools; standard indexing plus per-school dispatch batching (no partitioning/sharding required for Phase 1).
+- Q: Where/how are money-event attachment images stored, and with what limits? → A: Supabase Storage (object storage); the event record holds a reference (bucket path/key), not the bytes. Accept JPEG/PNG/WebP/PDF, max ~5 MB per file, enforced per-bucket; access is tenant-scoped.
+- Q: Does scheduled SMS dispatch keep sending while a school is in grace or fully locked? → A: No — scheduled dispatch is paused in both grace and locked states (sending is a credit-consuming write action and follows the same write-gating as other writes). The SMS log and reminder config remain viewable.
+- Q: What are the performance/responsiveness targets? → A: Pragmatic — interactive screens (dashboard, reports, statement view) respond in ≤3 s and PDF export (statement/receipt) completes in ≤5 s, at the medium scale (~2,000 students/school), under normal load.
+- Q: How is strict tenant isolation enforced? → A: Database-enforced via Supabase Row-Level Security (RLS) policies keyed to the user's school as the primary guarantee, with application-layer school scoping as defense-in-depth. The super-admin's exclusion from school financial data is enforced by the same policy layer.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Super-admin onboards a school tenant (Priority: P1)
@@ -190,7 +200,7 @@ A simple in-app notification center (bell) surfaces relevant events to the right
 **Roles, tenancy, and access**
 
 - **FR-001**: System MUST support four roles — super-admin (SaaS operator), school admin, accountant, and viewer — with the access boundaries below.
-- **FR-002**: System MUST scope every user except the super-admin to exactly one school, and MUST ensure no user or query can read or modify any other school's data (strict tenant isolation).
+- **FR-002**: System MUST scope every user except the super-admin to exactly one school, and MUST ensure no user or query can read or modify any other school's data (strict tenant isolation). Isolation MUST be enforced at the database layer via Supabase Row-Level Security (RLS) policies keyed to the user's school as the primary guarantee, with application-layer school scoping as an additional defense-in-depth layer.
 - **FR-003**: System MUST allow the super-admin to create and manage school tenants, set each school's annual subscription period, and add SMS credit, while preventing the super-admin from viewing or editing any school's financial records.
 - **FR-004**: System MUST give the school admin full access within their own school (structure, fees, money, reports, users, settings).
 - **FR-005**: System MUST limit the accountant to recording money events (payments, expenses, transfers, refunds, adjustments) and viewing reports within their school, and MUST prevent them from changing settings, fee structures, users, or the subscription.
@@ -261,7 +271,7 @@ A simple in-app notification center (bell) surfaces relevant events to the right
 **Reminders and SMS sending**
 
 - **FR-042**: System MUST let a school admin configure reminder rules as any combination of N days before due, on the due date, and N days after due, each enable/disable/changeable, with sensible defaults provided (e.g. 3 days before, on due date, 3 days after).
-- **FR-043**: System MUST run a daily scheduled dispatch that finds every installment matching an active reminder rule, builds the guardian message, checks credit, sends via the provider, records the result, and decrements credit by segment count.
+- **FR-043**: System MUST run a daily scheduled dispatch that finds every installment matching an active reminder rule, builds the guardian message, checks credit, sends via the provider, records the result, and decrements credit by segment count. Dispatch MUST be paused for any school currently in the grace period or fully-locked state (sending follows the same write-gating as other write actions).
 - **FR-044**: System MUST compose each reminder in Arabic containing student name, grade/level, due amount in SDG, due date, and school name (e.g. `تذكير: الطالب {الاسم} - {الصف}. قسط مستحق {المبلغ} ج.س بتاريخ {التاريخ}. {المدرسة}`).
 - **FR-045**: System MUST skip and count students without a valid guardian phone number.
 - **FR-046**: System MUST let a school admin or accountant send a manual reminder on demand to a specific student's guardian, subject to the same credit and logging rules.
@@ -319,6 +329,7 @@ A simple in-app notification center (bell) surfaces relevant events to the right
 - **SC-011**: SMS credit never goes negative and is never double-charged, even under a batch that depletes it mid-run (atomic send-and-decrement holds in 100% of cases).
 - **SC-012**: No action, query, or user in one school can read or modify another school's data — zero cross-tenant access in security verification.
 - **SC-013**: Every screen and printable document is Arabic-only and fully right-to-left, with SDG as the only currency throughout.
+- **SC-014**: At the Phase-1 scale (~2,000 students per school), interactive screens — the admin dashboard, the receivables report, and the student statement view — render in ≤3 seconds, and PDF export of a statement or receipt completes in ≤5 seconds, under normal load.
 
 ## Assumptions
 
@@ -326,10 +337,12 @@ A simple in-app notification center (bell) surfaces relevant events to the right
 - **Payment allocation**: When a payment is recorded, the accountant selects the target installment(s); a sensible default applies it to the oldest outstanding installment first. Overpayment beyond an installment's remaining balance is prevented (a running balance never goes negative); excess must be applied to another installment or declined.
 - **Corrections model**: All corrections (to payments, expenses, transfers, refunds, adjustments) are made by posting an explicit reversing entry; the original and the reversal both remain visible and audited.
 - **SMS segment counting**: Arabic messages are Unicode-encoded; a segment is ~70 characters, so a typical reminder consumes ~2 credits. Credit is consumed on provider acceptance; a later failure is recorded and surfaced but does not auto-refund in this phase.
-- **Reminders during lifecycle states**: Reminder visibility and the SMS log remain available in read-only/locked states; new money events and edits are blocked. (Whether scheduled dispatch continues to send during grace/locked is treated as a configuration concern to confirm at planning; the default assumption is that dispatch follows the same read/write gating as other write actions.)
+- **Reminders during lifecycle states**: Reminder visibility and the SMS log remain available in read-only/locked states; new money events and edits are blocked. Scheduled SMS dispatch is **paused** in both the grace period and the fully-locked state — sending is a credit-consuming write action and follows the same write-gating as other writes. (Manual reminders are likewise unavailable while gated.)
 - **Authentication**: Standard session-based authentication for web app users is assumed; method details are an implementation concern for planning. There is no parent/guardian login or portal (out of scope).
 - **Default grace period**: The subscription grace period defaults to 14 days and is treated as a configurable default.
 - **Reminder rule defaults**: Defaults of 3 days before, on the due date, and 3 days after are provided and can be changed or disabled per school.
 - **Delivery (PWA, online-only)**: The product is an installable PWA that requires a connection to read and write; there is no offline data layer.
 - **Provider choice**: The concrete SMS provider adapter is a planning-level (`/plan`) decision; exactly one is configured per deployment and the abstraction does not change behavior.
+- **Attachment storage**: Money-event attachment images are stored in Supabase Storage (object storage); the event record persists only a reference (bucket path/key). Accepted formats are JPEG/PNG/WebP/PDF with a maximum of ~5 MB per file, enforced at the bucket level. Attachment access is tenant-scoped like all other school data.
+- **Scale**: Phase 1 targets up to ~2,000 students per school and ~100 schools. This fits a single standard relational database with conventional per-tenant indexing; the daily SMS dispatch processes one school's matching installments as a batch. No sharding/partitioning is assumed for Phase 1.
 - **Out of scope (deferred)**: Web push / notifications to a closed app, parent/guardian login or portal, offline data use, and an automated year-end rollover wizard are out of scope for Phase 1 (the data model must support carrying outstanding balances forward, but a one-click promotion wizard is deferred).
