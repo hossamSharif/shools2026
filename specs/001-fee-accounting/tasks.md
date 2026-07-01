@@ -39,17 +39,17 @@ implementable and testable.
 
 **Purpose**: Monorepo skeleton, tooling, and per-package scaffolds.
 
-- [ ] T001 Create pnpm + Turborepo root: `package.json` (workspace root), `pnpm-workspace.yaml` (globs `packages/*`), `turbo.json` (build/lint/test/typecheck pipeline) at repository root
-- [ ] T002 [P] Add root TypeScript strict config `tsconfig.base.json` (strict mode, `noUncheckedIndexedAccess`) at repository root
-- [ ] T003 [P] Configure ESLint + Prettier at repository root (`.eslintrc.cjs`, `.prettierrc`, `.editorconfig`)
-- [ ] T004 [P] Scaffold `@erp/shared` in `packages/shared/` (`package.json`, `tsconfig.json`, `src/{money,sms,schemas}/index.ts`)
-- [ ] T005 [P] Scaffold `@erp/database` in `packages/database/` (`package.json`, `tsconfig.json`, `migrations/`, `functions/`, `seeds/`, `src/types/`)
-- [ ] T006 [P] Scaffold `@erp/ui` in `packages/ui/` (`package.json`, `tsconfig.json`, Tailwind + tailwind-merge + cva, `src/index.ts`)
-- [ ] T007 Scaffold `@erp/web` Next.js 14 App Router in `packages/web/` (`package.json` with next-intl, TanStack Query/Table/Virtual, react-hook-form, Zod, Radix, `@react-pdf/renderer`, Serwist; `next.config.mjs`, `app/`, `lib/`, `pdf/`, `tests/`)
-- [ ] T008 Scaffold `@erp/api` Express worker in `packages/api/` (`package.json` with express, helmet, cors, express-rate-limit; `src/{cron,dispatch,providers,routes,tests}/`)
-- [ ] T009 [P] Add Vitest config + scripts to `packages/shared`, `packages/database`, `packages/api` (`vitest.config.ts` each)
-- [ ] T010 [P] Add Playwright config in `packages/web/playwright.config.ts` (RTL/Arabic locale defaults, single browser project)
-- [ ] T011 [P] Add `.env.example` at repository root documenting all quickstart env vars (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SMS_PROVIDER`, `SMS_PROVIDER_BASE_URL`, `SMS_PROVIDER_API_KEY`, `SMS_WEBHOOK_SECRET`, `DISPATCH_INTERNAL_TOKEN`, `SCHOOL_TZ=Africa/Khartoum`)
+- [X] T001 Create pnpm + Turborepo root: `package.json` (workspace root), `pnpm-workspace.yaml` (globs `packages/*`), `turbo.json` (build/lint/test/typecheck pipeline) at repository root
+- [X] T002 [P] Add root TypeScript strict config `tsconfig.base.json` (strict mode, `noUncheckedIndexedAccess`) at repository root
+- [X] T003 [P] Configure ESLint + Prettier at repository root (`.eslintrc.cjs`, `.prettierrc`, `.editorconfig`)
+- [X] T004 [P] Scaffold `@erp/shared` in `packages/shared/` (`package.json`, `tsconfig.json`, `src/{money,sms,schemas}/index.ts`)
+- [X] T005 [P] Scaffold `@erp/database` in `packages/database/` (`package.json`, `tsconfig.json`, `migrations/`, `functions/`, `seeds/`, `src/types/`)
+- [X] T006 [P] Scaffold `@erp/ui` in `packages/ui/` (`package.json`, `tsconfig.json`, Tailwind + tailwind-merge + cva, `src/index.ts`)
+- [X] T007 Scaffold `@erp/web` Next.js 14 App Router in `packages/web/` (`package.json` with next-intl, TanStack Query/Table/Virtual, react-hook-form, Zod, Radix, `@react-pdf/renderer`, Serwist; `next.config.mjs`, `app/`, `lib/`, `pdf/`, `tests/`)
+- [X] T008 Scaffold `@erp/api` Express worker in `packages/api/` (`package.json` with express, helmet, cors, express-rate-limit; `src/{cron,dispatch,providers,routes,tests}/`)
+- [X] T009 [P] Add Vitest config + scripts to `packages/shared`, `packages/database`, `packages/api` (`vitest.config.ts` each)
+- [X] T010 [P] Add Playwright config in `packages/web/playwright.config.ts` (RTL/Arabic locale defaults, single browser project)
+- [X] T011 [P] Add `.env.example` at repository root documenting all quickstart env vars (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SMS_PROVIDER`, `SMS_PROVIDER_BASE_URL`, `SMS_PROVIDER_API_KEY`, `SMS_WEBHOOK_SECRET`, `DISPATCH_INTERNAL_TOKEN`, `SCHOOL_TZ=Africa/Khartoum`)
 
 ---
 
