@@ -63,15 +63,15 @@ helper, and the type-generation pipeline.
 
 ### Shared domain types & Zod (single source of truth — Article XI)
 
-- [ ] T012 [P] Define Zod primitives `Money` (`/^\d{1,12}(\.\d{1,2})?$/`), `Uuid`, `IdempotencyKey` in `packages/shared/src/schemas/primitives.ts`
-- [ ] T013 [P] Define the canonical money-event discriminator + type set (`fee_payment | expense | transfer | refund | adjustment`) and per-type field types in `packages/shared/src/money/events.ts`
-- [ ] T014 [P] Define `SmsProvider` interface (`send`, `normalizeWebhook`) in `packages/shared/src/sms/provider.ts`
-- [ ] T015 [P] Implement Arabic-Unicode SMS segment-count util (~70 chars/segment) in `packages/shared/src/sms/segments.ts`
-- [ ] T016 [P] Unit test the segment-count util (single/multi-segment Arabic) in `packages/shared/src/sms/segments.test.ts`
+- [X] T012 [P] Define Zod primitives `Money` (`/^\d{1,12}(\.\d{1,2})?$/`), `Uuid`, `IdempotencyKey` in `packages/shared/src/schemas/primitives.ts`
+- [X] T013 [P] Define the canonical money-event discriminator + type set (`fee_payment | expense | transfer | refund | adjustment`) and per-type field types in `packages/shared/src/money/events.ts`
+- [X] T014 [P] Define `SmsProvider` interface (`send`, `normalizeWebhook`) in `packages/shared/src/sms/provider.ts`
+- [X] T015 [P] Implement Arabic-Unicode SMS segment-count util (~70 chars/segment) in `packages/shared/src/sms/segments.ts`
+- [X] T016 [P] Unit test the segment-count util (single/multi-segment Arabic) in `packages/shared/src/sms/segments.test.ts`
 
 ### Database foundation (Supabase MCP — Article XII)
 
-- [ ] T017 Document the migration workflow + money-migration owner-review gate in `packages/database/README.md`, and add the reusable default-deny RLS + GRANT policy template in `packages/database/migrations/_templates/tenant_rls.sql`
+- [X] T017 Document the migration workflow + money-migration owner-review gate in `packages/database/README.md`, and add the reusable default-deny RLS + GRANT policy template in `packages/database/migrations/_templates/tenant_rls.sql`
 - [ ] T018 Migration: create `user` table (`id` Auth uid, `role` enum `super_admin|school_admin|accountant|viewer`, `school_id` nullable, `display_name`) + `user_school` resolution and the `current_school_id()` / `current_role()` SQL helpers reading the JWT, via Supabase MCP `apply_migration` (file `packages/database/migrations/0001_users_and_resolution.sql`)
 - [ ] T019 Migration: seed reference data — three fixed Stages (الابتدائية/المتوسطة/الثانوية) and 12 Grades (Primary 6 / Middle 3 / Secondary 3, Arabic labels, `ordinal`) in `packages/database/seeds/stages_grades.sql`
 - [ ] T020 Migration: `subscription_state(school_id)` SQL helper deriving `active|grace|locked` from `period_end` + `grace_days` evaluated in `Africa/Khartoum`, and a `assert_writes_allowed(school_id)` guard raising `WRITES_GATED`/`DISPATCH_PAUSED`, in `packages/database/functions/write_gating.sql` (money-migration → owner review)
@@ -79,14 +79,14 @@ helper, and the type-generation pipeline.
 
 ### Auth, RLS plumbing & web shell
 
-- [ ] T022 Implement Supabase SSR clients (server, client, middleware) in `packages/web/lib/supabase/{server,client,middleware}.ts` with session-based auth and `school_id` claim propagation
-- [ ] T023 Implement role-aware auth guard + middleware in `packages/web/middleware.ts` and `packages/web/lib/auth/guard.ts` (redirect unauthenticated; expose role + school)
-- [ ] T024 Implement the Zod-validated RPC caller wrapper (validates input before RPC, output on return, maps DB error codes) in `packages/web/lib/rpc/call.ts`
-- [ ] T025 [P] Configure next-intl Arabic locale + `dir="rtl"` root layout in `packages/web/app/layout.tsx` and `packages/web/i18n/{request.ts,messages/ar.json}`
-- [ ] T026 [P] Implement RTL formatting utils — Arabic numerals, `Africa/Khartoum` dates (date-fns tz), SDG currency — in `packages/web/lib/format/{number,date,currency}.ts`
-- [ ] T027 [P] Build base RTL-aware `@erp/ui` components (Button, Input, Select, Dialog, Card, DataTable wrapper over TanStack Table) in `packages/ui/src/components/`
-- [ ] T028 Implement TanStack Query provider + app shell/navigation (role-scoped nav) in `packages/web/app/providers.tsx` and `packages/web/components/app-shell.tsx`
-- [ ] T029 [P] Add Vitest test for `subscription_state` derivation (active/grace/locked boundaries in Africa/Khartoum) in `packages/database/src/functions/write_gating.test.ts`
+- [X] T022 Implement Supabase SSR clients (server, client, middleware) in `packages/web/lib/supabase/{server,client,middleware}.ts` with session-based auth and `school_id` claim propagation
+- [X] T023 Implement role-aware auth guard + middleware in `packages/web/middleware.ts` and `packages/web/lib/auth/guard.ts` (redirect unauthenticated; expose role + school)
+- [X] T024 Implement the Zod-validated RPC caller wrapper (validates input before RPC, output on return, maps DB error codes) in `packages/web/lib/rpc/call.ts`
+- [X] T025 [P] Configure next-intl Arabic locale + `dir="rtl"` root layout in `packages/web/app/layout.tsx` and `packages/web/i18n/{request.ts,messages/ar.json}`
+- [X] T026 [P] Implement RTL formatting utils — Arabic numerals, `Africa/Khartoum` dates (date-fns tz), SDG currency — in `packages/web/lib/format/{number,date,currency}.ts`
+- [X] T027 [P] Build base RTL-aware `@erp/ui` components (Button, Input, Select, Dialog, Card, DataTable wrapper over TanStack Table) in `packages/ui/src/components/`
+- [X] T028 Implement TanStack Query provider + app shell/navigation (role-scoped nav) in `packages/web/app/providers.tsx` and `packages/web/components/app-shell.tsx`
+- [X] T029 [P] Add Vitest test for `subscription_state` derivation (active/grace/locked boundaries in Africa/Khartoum) in `packages/database/src/functions/write_gating.test.ts`
 
 **Checkpoint**: Foundation ready — auth, RLS conventions, shared types, RTL shell, and base UI exist. User stories can now begin.
 

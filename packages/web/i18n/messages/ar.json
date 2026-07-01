@@ -1,0 +1,36 @@
+{
+  "app": {
+    "title": "نظام محاسبة الرسوم المدرسية",
+    "nav": {
+      "dashboard": "لوحة التحكم",
+      "students": "الطلاب",
+      "payments": "المدفوعات",
+      "expenses": "المصروفات",
+      "reports": "التقارير",
+      "settings": "الإعدادات",
+      "sms": "الرسائل",
+      "schools": "المدارس"
+    }
+  },
+  "common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "add": "إضافة",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "loading": "جارٍ التحميل…",
+    "search": "بحث",
+    "currency": "ج.س"
+  },
+  "superAdmin": {
+    "schools": {
+      "title": "المدارس",
+      "new": "مدرسة جديدة",
+      "name": "اسم المدرسة",
+      "subscriptionStart": "بداية الاشتراك",
+      "subscriptionEnd": "نهاية الاشتراك",
+      "creditBalance": "رصيد الرسائل",
+      "addCredit": "إضافة رصيد"
+    }
+  }
+}

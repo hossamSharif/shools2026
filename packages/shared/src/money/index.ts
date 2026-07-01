@@ -1,3 +1,2 @@
 // @erp/shared/money — canonical money-event types + Zod schemas (single source of truth).
-// Populated in Phase 2 (Foundational).
-export {};
+export * from './events.js';
