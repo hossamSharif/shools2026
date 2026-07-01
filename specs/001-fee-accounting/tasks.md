@@ -103,9 +103,9 @@ cannot open the school's ledger/money events.
 
 ### Tests for User Story 1 ⚠️
 
-- [ ] T030 [P] [US1] Playwright E2E: super-admin creates school, sets subscription, adds credit; school appears with correct dates + zero→topped-up balance, in `packages/web/tests/us1-onboard-school.spec.ts`
-- [ ] T031 [P] [US1] Playwright + MCP isolation test (G5): super-admin attempting to read a school's `money_event`/financial tables returns zero rows, in `packages/web/tests/us1-superadmin-isolation.spec.ts`
-- [ ] T032 [P] [US1] Vitest: `topup_sms_credit` adds credit, logs actor/when, and credit balance = Σtopups; super-admin-only enforced, in `packages/database/src/functions/topup_sms_credit.test.ts`
+- [X] T030 [P] [US1] Playwright E2E: super-admin creates school, sets subscription, adds credit; school appears with correct dates + zero→topped-up balance, in `packages/web/tests/us1-onboard-school.spec.ts`
+- [X] T031 [P] [US1] Playwright + MCP isolation test (G5): super-admin attempting to read a school's `money_event`/financial tables returns zero rows, in `packages/web/tests/us1-superadmin-isolation.spec.ts`
+- [X] T032 [P] [US1] Vitest: `topup_sms_credit` adds credit, logs actor/when, and credit balance = Σtopups; super-admin-only enforced, in `packages/database/src/functions/topup_sms_credit.test.ts`
 
 ### Implementation for User Story 1
 
@@ -113,11 +113,11 @@ cannot open the school's ledger/money events.
 - [ ] T034 [US1] Migration: `sms_credit_topup` (school_id, amount int, actor_user_id, created_at) + `sms_credit_consumption` (school_id, segments, sms_message_id, created_at) tables with RLS (super-admin GRANT on topup; financial tables excluded from super-admin reads), in `packages/database/migrations/0003_sms_credit_ledger.sql` (money-migration → owner review)
 - [ ] T035 [US1] Migration: super-admin RLS policies that **exclude** super-admin from all financial tables (`money_event`, `installment`, `sms_credit_consumption`, etc.) in `packages/database/migrations/0004_superadmin_financial_walloff.sql` (money-migration → owner review)
 - [ ] T036 [US1] Implement `topup_sms_credit(school_id, amount, idempotency_key)` Postgres function (super-admin only; logs topup; returns `credit_balance_after`) in `packages/database/functions/topup_sms_credit.sql` (money-migration → owner review)
-- [ ] T037 [US1] Add Zod schemas `CreateSchoolInput`, `SetSubscriptionInput`, `TopupSmsCreditInput/Output` in `packages/shared/src/schemas/admin.ts`
-- [ ] T038 [P] [US1] Super-admin schools list page (table of schools, subscription dates, derived credit balance) in `packages/web/app/(super-admin)/schools/page.tsx`
-- [ ] T039 [P] [US1] Create-school + set-subscription form (react-hook-form + Zod) in `packages/web/app/(super-admin)/schools/new/page.tsx` and `packages/web/components/super-admin/school-form.tsx`
-- [ ] T040 [US1] Add-SMS-credit action calling `topup_sms_credit` RPC in `packages/web/app/(super-admin)/schools/[schoolId]/credit/page.tsx`
-- [ ] T041 [US1] Server actions / light CRUD for school + subscription create/update in `packages/web/lib/actions/schools.ts`
+- [X] T037 [US1] Add Zod schemas `CreateSchoolInput`, `SetSubscriptionInput`, `TopupSmsCreditInput/Output` in `packages/shared/src/schemas/admin.ts`
+- [X] T038 [P] [US1] Super-admin schools list page (table of schools, subscription dates, derived credit balance) in `packages/web/app/(super-admin)/schools/page.tsx`
+- [X] T039 [P] [US1] Create-school + set-subscription form (react-hook-form + Zod) in `packages/web/app/(super-admin)/schools/new/page.tsx` and `packages/web/components/super-admin/school-form.tsx`
+- [X] T040 [US1] Add-SMS-credit action calling `topup_sms_credit` RPC in `packages/web/app/(super-admin)/schools/[schoolId]/credit/page.tsx`
+- [X] T041 [US1] Server actions / light CRUD for school + subscription create/update in `packages/web/lib/actions/schools.ts`
 
 **Checkpoint**: A super-admin can onboard a tenant with subscription + credit and is provably walled off from financials. MVP-onboarding works end to end.
 
