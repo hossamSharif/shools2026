@@ -135,28 +135,28 @@ generate with correct amounts + due dates.
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T042 [P] [US2] Playwright E2E: build year → sections → accounts → fee structure → enroll student → installments generated correctly, in `packages/web/tests/us2-spine-and-enroll.spec.ts`
-- [ ] T043 [P] [US2] Vitest: exactly-one-current-year invariant (partial unique index) enforced, in `packages/database/src/migrations/academic_year.test.ts`
-- [ ] T044 [P] [US2] Vitest: enrollment generates installments matching the fee structure; enrollment with no fee structure generates none (Edge case), in `packages/database/src/functions/generate_installments.test.ts`
+- [X] T042 [P] [US2] Playwright E2E: build year → sections → accounts → fee structure → enroll student → installments generated correctly, in `packages/web/tests/us2-spine-and-enroll.spec.ts`
+- [X] T043 [P] [US2] Vitest: exactly-one-current-year invariant (partial unique index) enforced, in `packages/database/src/migrations/academic_year.test.ts`
+- [X] T044 [P] [US2] Vitest: enrollment generates installments matching the fee structure; enrollment with no fee structure generates none (Edge case), in `packages/database/src/functions/generate_installments.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T045 [US2] Migration: `academic_year` (school_id, label, is_current) with partial unique index `WHERE is_current`, RLS + GRANTs, in `packages/database/migrations/0005_academic_year.sql`
-- [ ] T046 [US2] Migration: `section` (school_id, grade_id, name) and `student` (school_id, name, guardian_name, guardian_phone nullable, photo_path nullable, status `active|withdrawn|graduated`) with RLS + GRANTs, in `packages/database/migrations/0006_sections_students.sql`
-- [ ] T047 [US2] Migration: `enrollment` (school_id, student_id, grade_id, section_id, academic_year_id) with RLS + GRANTs, in `packages/database/migrations/0007_enrollment.sql`
-- [ ] T048 [US2] Migration: `account` (school_id, name, type `cash|bank`, account_number nullable, opening_balance NUMERIC(14,2)) with RLS + GRANTs, in `packages/database/migrations/0008_accounts.sql` (money-adjacent → owner review)
-- [ ] T049 [US2] Migration: `fee_structure` (school_id, grade_id, academic_year_id) + child `fee_item` (name, amount) + `installment_schedule` (sequence, due_date, amount) with RLS + GRANTs, in `packages/database/migrations/0009_fee_structure.sql` (money-adjacent → owner review)
-- [ ] T050 [US2] Migration: `installment` (school_id, student_id, enrollment_id, sequence, due_date, amount_charged NUMERIC(14,2)) — immutable financial row — with RLS + GRANTs and indexes `(school_id, student_id)`, `(school_id, due_date)`, in `packages/database/migrations/0010_installments.sql` (money-migration → owner review)
-- [ ] T051 [US2] Implement `generate_installments(enrollment_id)` Postgres function/trigger that creates a student's installments from the matching fee structure on enrollment (FR-018; no-op when no structure — Edge case), in `packages/database/functions/generate_installments.sql` (money-migration → owner review)
-- [ ] T052 [US2] Implement `record_opening_balance` handling + carried-in outstanding charge for mid-year onboarding (FR-029) in `packages/database/functions/opening_balances.sql` (money-migration → owner review)
-- [ ] T053 [P] [US2] Zod schemas for year/section/student/account/fee-structure/enrollment forms in `packages/shared/src/schemas/spine.ts`
-- [ ] T054 [P] [US2] Academic-year management UI (create, mark current) in `packages/web/app/(school)/settings/years/page.tsx`
-- [ ] T055 [P] [US2] Grades (read-only fixed) + sections management UI in `packages/web/app/(school)/settings/grades/page.tsx`
-- [ ] T056 [P] [US2] Accounts management UI (cash/bank, opening balance) in `packages/web/app/(school)/settings/accounts/page.tsx`
-- [ ] T057 [P] [US2] Fee-structure builder UI (fee items + installment schedule with due dates) in `packages/web/app/(school)/settings/fees/page.tsx`
-- [ ] T058 [P] [US2] Student profile CRUD UI in `packages/web/app/(school)/students/page.tsx` and `packages/web/components/students/student-form.tsx`
-- [ ] T059 [US2] Enrollment UI (student → grade+section+year) that triggers installment generation, in `packages/web/app/(school)/students/[studentId]/enroll/page.tsx`
-- [ ] T060 [US2] Server actions / light CRUD for spine entities in `packages/web/lib/actions/spine.ts`
+- [X] T045 [US2] Migration: `academic_year` (school_id, label, is_current) with partial unique index `WHERE is_current`, RLS + GRANTs, in `packages/database/migrations/0005_academic_year.sql`
+- [X] T046 [US2] Migration: `section` (school_id, grade_id, name) and `student` (school_id, name, guardian_name, guardian_phone nullable, photo_path nullable, status `active|withdrawn|graduated`) with RLS + GRANTs, in `packages/database/migrations/0006_sections_students.sql`
+- [X] T047 [US2] Migration: `enrollment` (school_id, student_id, grade_id, section_id, academic_year_id) with RLS + GRANTs, in `packages/database/migrations/0007_enrollment.sql`
+- [X] T048 [US2] Migration: `account` (school_id, name, type `cash|bank`, account_number nullable, opening_balance NUMERIC(14,2)) with RLS + GRANTs, in `packages/database/migrations/0008_accounts.sql` (money-adjacent → owner review)
+- [X] T049 [US2] Migration: `fee_structure` (school_id, grade_id, academic_year_id) + child `fee_item` (name, amount) + `installment_schedule` (sequence, due_date, amount) with RLS + GRANTs, in `packages/database/migrations/0009_fee_structure.sql` (money-adjacent → owner review)
+- [X] T050 [US2] Migration: `installment` (school_id, student_id, enrollment_id, sequence, due_date, amount_charged NUMERIC(14,2)) — immutable financial row — with RLS + GRANTs and indexes `(school_id, student_id)`, `(school_id, due_date)`, in `packages/database/migrations/0010_installments.sql` (money-migration → owner review)
+- [X] T051 [US2] Implement `generate_installments(enrollment_id)` Postgres function/trigger that creates a student's installments from the matching fee structure on enrollment (FR-018; no-op when no structure — Edge case), in `packages/database/functions/generate_installments.sql` (money-migration → owner review)
+- [X] T052 [US2] Implement `record_opening_balance` handling + carried-in outstanding charge for mid-year onboarding (FR-029) in `packages/database/functions/opening_balances.sql` (money-migration → owner review)
+- [X] T053 [P] [US2] Zod schemas for year/section/student/account/fee-structure/enrollment forms in `packages/shared/src/schemas/spine.ts`
+- [X] T054 [P] [US2] Academic-year management UI (create, mark current) in `packages/web/app/(school)/settings/years/page.tsx`
+- [X] T055 [P] [US2] Grades (read-only fixed) + sections management UI in `packages/web/app/(school)/settings/grades/page.tsx`
+- [X] T056 [P] [US2] Accounts management UI (cash/bank, opening balance) in `packages/web/app/(school)/settings/accounts/page.tsx`
+- [X] T057 [P] [US2] Fee-structure builder UI (fee items + installment schedule with due dates) in `packages/web/app/(school)/settings/fees/page.tsx`
+- [X] T058 [P] [US2] Student profile CRUD UI in `packages/web/app/(school)/students/page.tsx` and `packages/web/components/students/student-form.tsx`
+- [X] T059 [US2] Enrollment UI (student → grade+section+year) that triggers installment generation, in `packages/web/app/(school)/students/[studentId]/enroll/page.tsx`
+- [X] T060 [US2] Server actions / light CRUD for spine entities in `packages/web/lib/actions/spine.ts`
 
 **Checkpoint**: A school admin can stand up the full spine and enroll a student with correctly generated installments.
 
@@ -176,23 +176,23 @@ receipt, and both student + account balances change by exactly the payment amoun
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T061 [P] [US3] Playwright E2E (G3.1): partial payment → receipt number issued → balances update → receipt renders RTL Arabic (SC-006), in `packages/web/tests/us3-fee-payment.spec.ts`
-- [ ] T062 [P] [US3] Vitest concurrency test (G2/SC-003): parallel `apply_fee_payment` for one school yields gapless, unique, never-reused `receipt_no`; a rolled-back payment consumes no number, in `packages/database/src/functions/apply_fee_payment.concurrency.test.ts`
-- [ ] T063 [P] [US3] Vitest (G1/SC-004): reconciliation — account + student + installment running balance equal the event-sum after a payment; overpayment is blocked (running balance never negative), in `packages/database/src/functions/apply_fee_payment.test.ts`
-- [ ] T064 [P] [US3] Vitest: idempotency — replaying the same `idempotency_key` returns the prior result, no double-post, in `packages/database/src/functions/apply_fee_payment.idempotency.test.ts`
+- [X] T061 [P] [US3] Playwright E2E (G3.1): partial payment → receipt number issued → balances update → receipt renders RTL Arabic (SC-006), in `packages/web/tests/us3-fee-payment.spec.ts`
+- [X] T062 [P] [US3] Vitest concurrency test (G2/SC-003): parallel `apply_fee_payment` for one school yields gapless, unique, never-reused `receipt_no`; a rolled-back payment consumes no number, in `packages/database/src/functions/apply_fee_payment.concurrency.test.ts`
+- [X] T063 [P] [US3] Vitest (G1/SC-004): reconciliation — account + student + installment running balance equal the event-sum after a payment; overpayment is blocked (running balance never negative), in `packages/database/src/functions/apply_fee_payment.test.ts`
+- [X] T064 [P] [US3] Vitest: idempotency — replaying the same `idempotency_key` returns the prior result, no double-post, in `packages/database/src/functions/apply_fee_payment.idempotency.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T065 [US3] Migration: `money_event` table (typed discriminator, amount NUMERIC(14,2), account_id, actor_user_id, occurred_at timestamptz, idempotency_key, reverses_event_id, attachment_path, notes) — immutable, never deleted — with RLS, GRANTs, unique `(school_id, idempotency_key)`, and indexes `(school_id, account_id, occurred_at)` / `(school_id, event_type, occurred_at)`, in `packages/database/migrations/0011_money_event.sql` (money-migration → owner review)
-- [ ] T066 [US3] Migration: `receipt_counter` (school_id, next_value) + `audit_entry` (school_id, money_event_id, actor_user_id, action, created_at) immutable tables with RLS + GRANTs, in `packages/database/migrations/0012_receipt_counter_audit.sql` (money-migration → owner review)
-- [ ] T067 [US3] Migration: `payment_allocation` (money_event_id, installment_id, amount) linking a payment to installment(s), with RLS + GRANTs, in `packages/database/migrations/0013_payment_allocation.sql` (money-migration → owner review)
-- [ ] T068 [US3] Implement `apply_fee_payment(...)` single-transaction Postgres function: oldest-outstanding-first default allocation, block overpayment (`OVERPAYMENT_BLOCKED`), lock `receipt_counter` `FOR UPDATE` to assign gapless `receipt_no`, write `money_event` + `payment_allocation` + `audit_entry`, enforce `assert_writes_allowed` (`WRITES_GATED`), honor `idempotency_key` (`IDEMPOTENT_REPLAY`), in `packages/database/functions/apply_fee_payment.sql` (money-migration → owner review)
-- [ ] T069 [US3] Create `money-attachments` private Storage bucket + tenant RLS policy keyed to first path segment = `school_id` (per storage-contract), via Supabase MCP, recorded in `packages/database/migrations/0014_storage_money_attachments.sql` (owner review)
-- [ ] T070 [P] [US3] Add `ApplyFeePaymentInput/Output` Zod schemas (amounts as decimal strings) in `packages/shared/src/schemas/money.ts`
-- [ ] T071 [US3] Implement attachment upload (MIME + ~5 MB validation at boundary; path `{school_id}/{event_type}/{yyyy}/{mm}/{id}-{n}.{ext}`) in `packages/web/lib/storage/attachments.ts`
-- [ ] T072 [US3] Implement derived-balance read queries/views (account live balance, student balance, installment running balance) in `packages/database/functions/derived_balances.sql` and `packages/web/lib/queries/balances.ts`
-- [ ] T073 [US3] Fee-payment UI: select student/installment(s) + account, amount, optional attachment, submit via `apply_fee_payment` RPC, in `packages/web/app/(school)/payments/new/page.tsx` and `packages/web/components/payments/payment-form.tsx`
-- [ ] T074 [US3] Printable RTL Arabic receipt PDF template (student, grade/section, amount, account, date, receipt #, running balance) using `@react-pdf/renderer` in `packages/web/pdf/receipt.tsx`, with print route `packages/web/app/(school)/payments/[eventId]/receipt/page.tsx`
+- [X] T065 [US3] Migration: `money_event` table (typed discriminator, amount NUMERIC(14,2), account_id, actor_user_id, occurred_at timestamptz, idempotency_key, reverses_event_id, attachment_path, notes) — immutable, never deleted — with RLS, GRANTs, unique `(school_id, idempotency_key)`, and indexes `(school_id, account_id, occurred_at)` / `(school_id, event_type, occurred_at)`, in `packages/database/migrations/0011_money_event.sql` (money-migration → owner review)
+- [X] T066 [US3] Migration: `receipt_counter` (school_id, next_value) + `audit_entry` (school_id, money_event_id, actor_user_id, action, created_at) immutable tables with RLS + GRANTs, in `packages/database/migrations/0012_receipt_counter_audit.sql` (money-migration → owner review)
+- [X] T067 [US3] Migration: `payment_allocation` (money_event_id, installment_id, amount) linking a payment to installment(s), with RLS + GRANTs, in `packages/database/migrations/0013_payment_allocation.sql` (money-migration → owner review)
+- [X] T068 [US3] Implement `apply_fee_payment(...)` single-transaction Postgres function: oldest-outstanding-first default allocation, block overpayment (`OVERPAYMENT_BLOCKED`), lock `receipt_counter` `FOR UPDATE` to assign gapless `receipt_no`, write `money_event` + `payment_allocation` + `audit_entry`, enforce `assert_writes_allowed` (`WRITES_GATED`), honor `idempotency_key` (`IDEMPOTENT_REPLAY`), in `packages/database/functions/apply_fee_payment.sql` (money-migration → owner review)
+- [X] T069 [US3] Create `money-attachments` private Storage bucket + tenant RLS policy keyed to first path segment = `school_id` (per storage-contract), via Supabase MCP, recorded in `packages/database/migrations/0014_storage_money_attachments.sql` (owner review)
+- [X] T070 [P] [US3] Add `ApplyFeePaymentInput/Output` Zod schemas (amounts as decimal strings) in `packages/shared/src/schemas/money.ts`
+- [X] T071 [US3] Implement attachment upload (MIME + ~5 MB validation at boundary; path `{school_id}/{event_type}/{yyyy}/{mm}/{id}-{n}.{ext}`) in `packages/web/lib/storage/attachments.ts`
+- [X] T072 [US3] Implement derived-balance read queries/views (account live balance, student balance, installment running balance) in `packages/database/functions/derived_balances.sql` and `packages/web/lib/queries/balances.ts`
+- [X] T073 [US3] Fee-payment UI: select student/installment(s) + account, amount, optional attachment, submit via `apply_fee_payment` RPC, in `packages/web/app/(school)/payments/new/page.tsx` and `packages/web/components/payments/payment-form.tsx`
+- [X] T074 [US3] Printable RTL Arabic receipt PDF template (student, grade/section, amount, account, date, receipt #, running balance) using `@react-pdf/renderer` in `packages/web/pdf/receipt.tsx`, with print route `packages/web/app/(school)/payments/[eventId]/receipt/page.tsx`
 
 **Checkpoint**: Core money-in works — gapless receipts, derived balances reconcile, RTL receipt prints. This is the headline Phase-1 capability (MVP-complete with US1+US2+US3).
 
@@ -210,27 +210,27 @@ and confirm amount owed drops with no cash movement.
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T075 [P] [US4] Playwright E2E (G3.2): expense / transfer / refund / adjustment each post and balances reconcile (G1), in `packages/web/tests/us4-money-events.spec.ts`
-- [ ] T076 [P] [US4] Vitest reconciliation for expense/transfer/refund/adjustment + discount (cash-neutral) in `packages/database/src/functions/money_events.test.ts`
-- [ ] T077 [P] [US4] Vitest: reversing entry leaves original + reversal both visible and audited; no UPDATE/DELETE of posted rows (SC-005), in `packages/database/src/functions/reverse_event.test.ts`
+- [X] T075 [P] [US4] Playwright E2E (G3.2): expense / transfer / refund / adjustment each post and balances reconcile (G1), in `packages/web/tests/us4-money-events.spec.ts`
+- [X] T076 [P] [US4] Vitest reconciliation for expense/transfer/refund/adjustment + discount (cash-neutral) in `packages/database/src/functions/money_events.test.ts`
+- [X] T077 [P] [US4] Vitest: reversing entry leaves original + reversal both visible and audited; no UPDATE/DELETE of posted rows (SC-005), in `packages/database/src/functions/reverse_event.test.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T078 [US4] Migration: `discount` (school_id, student_id, kind `percentage|fixed|sibling_waiver`, value, computed_amount NUMERIC(14,2), actor_user_id, created_at) immutable table with RLS + GRANTs, in `packages/database/migrations/0015_discounts.sql` (money-migration → owner review)
-- [ ] T079 [US4] Migration: transfer columns/handling on `money_event` (`from_account_id`, `to_account_id`) and refund/adjustment `student_id` linkage, in `packages/database/migrations/0016_money_event_typefields.sql` (money-migration → owner review)
-- [ ] T080 [P] [US4] Implement `record_expense(...)` Postgres function (account out, category/vendor/description, audit, write-gating, idempotency) in `packages/database/functions/record_expense.sql` (money-migration → owner review)
-- [ ] T081 [P] [US4] Implement `record_transfer(...)` (from≠to, both balances move, neither income nor expense) in `packages/database/functions/record_transfer.sql` (money-migration → owner review)
-- [ ] T082 [P] [US4] Implement `record_refund(...)` (account out to guardian, adjusts student ledger, not an expense) in `packages/database/functions/record_refund.sql` (money-migration → owner review)
-- [ ] T083 [P] [US4] Implement `record_adjustment(...)` (write-off changing student owed, audited) in `packages/database/functions/record_adjustment.sql` (money-migration → owner review)
-- [ ] T084 [P] [US4] Implement `apply_discount(...)` (percentage/fixed/sibling waiver → computed_amount, no cash, audited, visible on statement) in `packages/database/functions/apply_discount.sql` (money-migration → owner review)
-- [ ] T085 [US4] Implement `reverse_event(money_event_id, reason, idempotency_key)` generic reverser (posts row with `reverses_event_id`; both remain visible) in `packages/database/functions/reverse_event.sql` (money-migration → owner review)
-- [ ] T086 [P] [US4] Add Zod schemas `RecordExpenseInput/Output`, `RecordTransferInput/Output`, `RecordRefundInput/Output`, `RecordAdjustmentInput/Output`, `ApplyDiscountInput/Output`, `ReverseEventInput/Output` in `packages/shared/src/schemas/money.ts`
-- [ ] T087 [P] [US4] Expense entry UI (account, category, vendor, description, attachment) in `packages/web/app/(school)/expenses/new/page.tsx`
-- [ ] T088 [P] [US4] Transfer UI (from/to accounts, amount) in `packages/web/app/(school)/transfers/new/page.tsx`
-- [ ] T089 [P] [US4] Refund UI (student, account, amount, attachment) in `packages/web/app/(school)/refunds/new/page.tsx`
-- [ ] T090 [P] [US4] Adjustment/write-off UI (student, amount, reason) in `packages/web/app/(school)/adjustments/new/page.tsx`
-- [ ] T091 [P] [US4] Discount/scholarship/waiver UI (student, kind, value, target installment) in `packages/web/app/(school)/students/[studentId]/discount/page.tsx`
-- [ ] T092 [US4] Reverse-entry action + UI affordance on a posted money event in `packages/web/components/money/reverse-event-button.tsx` and `packages/web/lib/actions/money-events.ts`
+- [X] T078 [US4] Migration: `discount` (school_id, student_id, kind `percentage|fixed|sibling_waiver`, value, computed_amount NUMERIC(14,2), actor_user_id, created_at) immutable table with RLS + GRANTs, in `packages/database/migrations/0015_discounts.sql` (money-migration → owner review)
+- [X] T079 [US4] Migration: transfer columns/handling on `money_event` (`from_account_id`, `to_account_id`) and refund/adjustment `student_id` linkage, in `packages/database/migrations/0016_money_event_typefields.sql` (money-migration → owner review)
+- [X] T080 [P] [US4] Implement `record_expense(...)` Postgres function (account out, category/vendor/description, audit, write-gating, idempotency) in `packages/database/functions/record_expense.sql` (money-migration → owner review)
+- [X] T081 [P] [US4] Implement `record_transfer(...)` (from≠to, both balances move, neither income nor expense) in `packages/database/functions/record_transfer.sql` (money-migration → owner review)
+- [X] T082 [P] [US4] Implement `record_refund(...)` (account out to guardian, adjusts student ledger, not an expense) in `packages/database/functions/record_refund.sql` (money-migration → owner review)
+- [X] T083 [P] [US4] Implement `record_adjustment(...)` (write-off changing student owed, audited) in `packages/database/functions/record_adjustment.sql` (money-migration → owner review)
+- [X] T084 [P] [US4] Implement `apply_discount(...)` (percentage/fixed/sibling waiver → computed_amount, no cash, audited, visible on statement) in `packages/database/functions/apply_discount.sql` (money-migration → owner review)
+- [X] T085 [US4] Implement `reverse_event(money_event_id, reason, idempotency_key)` generic reverser (posts row with `reverses_event_id`; both remain visible) in `packages/database/functions/reverse_event.sql` (money-migration → owner review)
+- [X] T086 [P] [US4] Add Zod schemas `RecordExpenseInput/Output`, `RecordTransferInput/Output`, `RecordRefundInput/Output`, `RecordAdjustmentInput/Output`, `ApplyDiscountInput/Output`, `ReverseEventInput/Output` in `packages/shared/src/schemas/money.ts`
+- [X] T087 [P] [US4] Expense entry UI (account, category, vendor, description, attachment) in `packages/web/app/(school)/expenses/new/page.tsx`
+- [X] T088 [P] [US4] Transfer UI (from/to accounts, amount) in `packages/web/app/(school)/transfers/new/page.tsx`
+- [X] T089 [P] [US4] Refund UI (student, account, amount, attachment) in `packages/web/app/(school)/refunds/new/page.tsx`
+- [X] T090 [P] [US4] Adjustment/write-off UI (student, amount, reason) in `packages/web/app/(school)/adjustments/new/page.tsx`
+- [X] T091 [P] [US4] Discount/scholarship/waiver UI (student, kind, value, target installment) in `packages/web/app/(school)/students/[studentId]/discount/page.tsx`
+- [X] T092 [US4] Reverse-entry action + UI affordance on a posted money event in `packages/web/components/money/reverse-event-button.tsx` and `packages/web/lib/actions/money-events.ts`
 
 **Checkpoint**: The full canonical event set is recordable; corrections are reversing-entry only; all balances reconcile.
 
