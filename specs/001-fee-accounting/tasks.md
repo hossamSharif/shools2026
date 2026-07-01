@@ -72,10 +72,10 @@ helper, and the type-generation pipeline.
 ### Database foundation (Supabase MCP — Article XII)
 
 - [X] T017 Document the migration workflow + money-migration owner-review gate in `packages/database/README.md`, and add the reusable default-deny RLS + GRANT policy template in `packages/database/migrations/_templates/tenant_rls.sql`
-- [ ] T018 Migration: create `user` table (`id` Auth uid, `role` enum `super_admin|school_admin|accountant|viewer`, `school_id` nullable, `display_name`) + `user_school` resolution and the `current_school_id()` / `current_role()` SQL helpers reading the JWT, via Supabase MCP `apply_migration` (file `packages/database/migrations/0001_users_and_resolution.sql`)
-- [ ] T019 Migration: seed reference data — three fixed Stages (الابتدائية/المتوسطة/الثانوية) and 12 Grades (Primary 6 / Middle 3 / Secondary 3, Arabic labels, `ordinal`) in `packages/database/seeds/stages_grades.sql`
-- [ ] T020 Migration: `subscription_state(school_id)` SQL helper deriving `active|grace|locked` from `period_end` + `grace_days` evaluated in `Africa/Khartoum`, and a `assert_writes_allowed(school_id)` guard raising `WRITES_GATED`/`DISPATCH_PAUSED`, in `packages/database/functions/write_gating.sql` (money-migration → owner review)
-- [ ] T021 Generate TypeScript types via Supabase MCP `generate_typescript_types` into `packages/database/src/types/database.ts` (consumed by other packages; no hand-written DB types)
+- [X] T018 Migration: create `user` table (`id` Auth uid, `role` enum `super_admin|school_admin|accountant|viewer`, `school_id` nullable, `display_name`) + `user_school` resolution and the `current_school_id()` / `current_role()` SQL helpers reading the JWT, via Supabase MCP `apply_migration` (file `packages/database/migrations/0001_users_and_resolution.sql`)
+- [X] T019 Migration: seed reference data — three fixed Stages (الابتدائية/المتوسطة/الثانوية) and 12 Grades (Primary 6 / Middle 3 / Secondary 3, Arabic labels, `ordinal`) in `packages/database/seeds/stages_grades.sql`
+- [X] T020 Migration: `subscription_state(school_id)` SQL helper deriving `active|grace|locked` from `period_end` + `grace_days` evaluated in `Africa/Khartoum`, and a `assert_writes_allowed(school_id)` guard raising `WRITES_GATED`/`DISPATCH_PAUSED`, in `packages/database/functions/write_gating.sql` (money-migration → owner review)
+- [X] T021 Generate TypeScript types via Supabase MCP `generate_typescript_types` into `packages/database/src/types/database.ts` (consumed by other packages; no hand-written DB types)
 
 ### Auth, RLS plumbing & web shell
 
@@ -109,10 +109,10 @@ cannot open the school's ledger/money events.
 
 ### Implementation for User Story 1
 
-- [ ] T033 [US1] Migration: `school` (id, name, created_at) + `subscription` (school_id, period_start, period_end, grace_days default 14) tables with default-deny RLS + GRANTs, in `packages/database/migrations/0002_school_subscription.sql` (money-adjacent → owner review)
-- [ ] T034 [US1] Migration: `sms_credit_topup` (school_id, amount int, actor_user_id, created_at) + `sms_credit_consumption` (school_id, segments, sms_message_id, created_at) tables with RLS (super-admin GRANT on topup; financial tables excluded from super-admin reads), in `packages/database/migrations/0003_sms_credit_ledger.sql` (money-migration → owner review)
-- [ ] T035 [US1] Migration: super-admin RLS policies that **exclude** super-admin from all financial tables (`money_event`, `installment`, `sms_credit_consumption`, etc.) in `packages/database/migrations/0004_superadmin_financial_walloff.sql` (money-migration → owner review)
-- [ ] T036 [US1] Implement `topup_sms_credit(school_id, amount, idempotency_key)` Postgres function (super-admin only; logs topup; returns `credit_balance_after`) in `packages/database/functions/topup_sms_credit.sql` (money-migration → owner review)
+- [X] T033 [US1] Migration: `school` (id, name, created_at) + `subscription` (school_id, period_start, period_end, grace_days default 14) tables with default-deny RLS + GRANTs, in `packages/database/migrations/0002_school_subscription.sql` (money-adjacent → owner review)
+- [X] T034 [US1] Migration: `sms_credit_topup` (school_id, amount int, actor_user_id, created_at) + `sms_credit_consumption` (school_id, segments, sms_message_id, created_at) tables with RLS (super-admin GRANT on topup; financial tables excluded from super-admin reads), in `packages/database/migrations/0003_sms_credit_ledger.sql` (money-migration → owner review)
+- [X] T035 [US1] Migration: super-admin RLS policies that **exclude** super-admin from all financial tables (`money_event`, `installment`, `sms_credit_consumption`, etc.) in `packages/database/migrations/0004_superadmin_financial_walloff.sql` (money-migration → owner review)
+- [X] T036 [US1] Implement `topup_sms_credit(school_id, amount, idempotency_key)` Postgres function (super-admin only; logs topup; returns `credit_balance_after`) in `packages/database/functions/topup_sms_credit.sql` (money-migration → owner review)
 - [X] T037 [US1] Add Zod schemas `CreateSchoolInput`, `SetSubscriptionInput`, `TopupSmsCreditInput/Output` in `packages/shared/src/schemas/admin.ts`
 - [X] T038 [P] [US1] Super-admin schools list page (table of schools, subscription dates, derived credit balance) in `packages/web/app/(super-admin)/schools/page.tsx`
 - [X] T039 [P] [US1] Create-school + set-subscription form (react-hook-form + Zod) in `packages/web/app/(super-admin)/schools/new/page.tsx` and `packages/web/components/super-admin/school-form.tsx`
