@@ -302,26 +302,26 @@ one manual reminder with the same behavior.
 
 ### Tests for User Story 7 ⚠️
 
-- [ ] T108 [P] [US7] Vitest (G6/SC-011): batch depleting credit mid-run — `consume_sms_credit` never goes negative, never double-charges, stops cleanly with sent-vs-skipped counts, in `packages/api/src/tests/dispatch-credit-integrity.test.ts`
-- [ ] T109 [P] [US7] Vitest: dispatch skips + counts students with no valid phone; paused school (grace/locked) sends nothing, in `packages/api/src/tests/dispatch-rules.test.ts`
-- [ ] T110 [P] [US7] Vitest: delivery webhook maps provider status → `sent|delivered|failed`; a later `failed` records but does not auto-refund credit, in `packages/api/src/tests/delivery-webhook.test.ts`
-- [ ] T111 [P] [US7] Playwright E2E: configure reminder rules, view SMS log per school + per student with status, in `packages/web/tests/us7-reminders.spec.ts`
+- [X] T108 [P] [US7] Vitest (G6/SC-011): batch depleting credit mid-run — `consume_sms_credit` never goes negative, never double-charges, stops cleanly with sent-vs-skipped counts, in `packages/api/src/tests/dispatch-credit-integrity.test.ts`
+- [X] T109 [P] [US7] Vitest: dispatch skips + counts students with no valid phone; paused school (grace/locked) sends nothing, in `packages/api/src/tests/dispatch-rules.test.ts`
+- [X] T110 [P] [US7] Vitest: delivery webhook maps provider status → `sent|delivered|failed`; a later `failed` records but does not auto-refund credit, in `packages/api/src/tests/delivery-webhook.test.ts`
+- [X] T111 [P] [US7] Playwright E2E: configure reminder rules, view SMS log per school + per student with status, in `packages/web/tests/us7-reminders.spec.ts`
 
 ### Implementation for User Story 7
 
-- [ ] T112 [US7] Migration: `reminder_rule` (school_id, offset_kind `before|on|after`, days int, enabled) with RLS + GRANTs, and seed defaults (3 before / on / 3 after), in `packages/database/migrations/0017_reminder_rules.sql`
-- [ ] T113 [US7] Migration: `sms_message_log` (school_id, student_id, recipient_phone, message_text, segments, status `queued|sent|delivered|failed`, provider_message_id nullable, is_manual, idempotency_key, created_at, updated_at) with RLS + GRANTs and index `(school_id, student_id, created_at)`, in `packages/database/migrations/0018_sms_message_log.sql` (money-adjacent → owner review)
-- [ ] T114 [US7] Implement `consume_sms_credit(school_id, sms_message_id, segments, idempotency_key)` atomic decrement (never negative, `INSUFFICIENT_CREDIT`, `DISPATCH_PAUSED`, `IDEMPOTENT_REPLAY`) in `packages/database/functions/consume_sms_credit.sql` (money-migration → owner review)
-- [ ] T115 [P] [US7] Implement `GenericHttpSmsProvider` adapter (HTTP POST send + webhook normalizer) implementing `SmsProvider` in `packages/api/src/providers/generic-http.ts`
-- [ ] T116 [US7] Implement dispatch worker: find installments matching active rules (windows in Africa/Khartoum), build Arabic message (`تذكير: الطالب {الاسم} - {الصف}. قسط مستحق {المبلغ} ج.س بتاريخ {التاريخ}. {المدرسة}`), compute segments, skip no-phone (count), check credit, send, `consume_sms_credit`, write log row, stop cleanly on insufficient credit, in `packages/api/src/dispatch/run-dispatch.ts`
-- [ ] T117 [US7] Implement `POST /internal/dispatch/run` endpoint (token-protected, Zod `DispatchRunInput/Output`, returns paused/completed/stopped + counts) in `packages/api/src/routes/dispatch-run.ts`
-- [ ] T118 [US7] Implement `POST /internal/dispatch/manual` endpoint (Zod `ManualReminderInput/Output`, same credit/atomicity/logging, gated) in `packages/api/src/routes/dispatch-manual.ts`
-- [ ] T119 [US7] Implement `POST /webhooks/sms/delivery` endpoint (secret-verified, Zod `DeliveryWebhookInput/Output`, status normalize → persist, idempotent 200) in `packages/api/src/routes/delivery-webhook.ts`
-- [ ] T120 [US7] Implement daily cron scheduler (per-school Africa/Khartoum day; skip paused schools) in `packages/api/src/cron/daily-reminders.ts`
-- [ ] T121 [P] [US7] Reminder-rules config UI (enable/disable/change before/on/after, defaults) in `packages/web/app/(school)/settings/reminders/page.tsx`
-- [ ] T122 [P] [US7] SMS log views — per school and per student (recipient, text, segments/credit, status, timestamp) in `packages/web/app/(school)/sms/page.tsx` and `packages/web/app/(school)/students/[studentId]/sms/page.tsx`
-- [ ] T123 [P] [US7] Manual-reminder send button (calls worker endpoint) in `packages/web/components/sms/manual-reminder-button.tsx`
-- [ ] T124 [US7] Low-credit / insufficient-credit admin alert surfacing (FR-041) in `packages/web/lib/notifications/credit-alert.ts`
+- [X] T112 [US7] Migration: `reminder_rule` (school_id, offset_kind `before|on|after`, days int, enabled) with RLS + GRANTs, and seed defaults (3 before / on / 3 after), in `packages/database/migrations/0017_reminder_rules.sql`
+- [X] T113 [US7] Migration: `sms_message_log` (school_id, student_id, recipient_phone, message_text, segments, status `queued|sent|delivered|failed`, provider_message_id nullable, is_manual, idempotency_key, created_at, updated_at) with RLS + GRANTs and index `(school_id, student_id, created_at)`, in `packages/database/migrations/0018_sms_message_log.sql` (money-adjacent → owner review)
+- [X] T114 [US7] Implement `consume_sms_credit(school_id, sms_message_id, segments, idempotency_key)` atomic decrement (never negative, `INSUFFICIENT_CREDIT`, `DISPATCH_PAUSED`, `IDEMPOTENT_REPLAY`) in `packages/database/functions/consume_sms_credit.sql` (money-migration → owner review)
+- [X] T115 [P] [US7] Implement `GenericHttpSmsProvider` adapter (HTTP POST send + webhook normalizer) implementing `SmsProvider` in `packages/api/src/providers/generic-http.ts`
+- [X] T116 [US7] Implement dispatch worker: find installments matching active rules (windows in Africa/Khartoum), build Arabic message (`تذكير: الطالب {الاسم} - {الصف}. قسط مستحق {المبلغ} ج.س بتاريخ {التاريخ}. {المدرسة}`), compute segments, skip no-phone (count), check credit, send, `consume_sms_credit`, write log row, stop cleanly on insufficient credit, in `packages/api/src/dispatch/run-dispatch.ts`
+- [X] T117 [US7] Implement `POST /internal/dispatch/run` endpoint (token-protected, Zod `DispatchRunInput/Output`, returns paused/completed/stopped + counts) in `packages/api/src/routes/dispatch-run.ts`
+- [X] T118 [US7] Implement `POST /internal/dispatch/manual` endpoint (Zod `ManualReminderInput/Output`, same credit/atomicity/logging, gated) in `packages/api/src/routes/dispatch-manual.ts`
+- [X] T119 [US7] Implement `POST /webhooks/sms/delivery` endpoint (secret-verified, Zod `DeliveryWebhookInput/Output`, status normalize → persist, idempotent 200) in `packages/api/src/routes/delivery-webhook.ts`
+- [X] T120 [US7] Implement daily cron scheduler (per-school Africa/Khartoum day; skip paused schools) in `packages/api/src/cron/daily-reminders.ts`
+- [X] T121 [P] [US7] Reminder-rules config UI (enable/disable/change before/on/after, defaults) in `packages/web/app/(school)/settings/reminders/page.tsx`
+- [X] T122 [P] [US7] SMS log views — per school and per student (recipient, text, segments/credit, status, timestamp) in `packages/web/app/(school)/sms/page.tsx` and `packages/web/app/(school)/students/[studentId]/sms/page.tsx`
+- [X] T123 [P] [US7] Manual-reminder send button (calls worker endpoint) in `packages/web/components/sms/manual-reminder-button.tsx`
+- [X] T124 [US7] Low-credit / insufficient-credit admin alert surfacing (FR-041) in `packages/web/lib/notifications/credit-alert.ts`
 
 **Checkpoint**: Daily + manual Arabic reminders send with atomic segment-count billing, full logging, and clean batch-stop on credit exhaustion.
 

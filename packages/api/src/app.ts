@@ -2,6 +2,9 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import { dispatchRunRouter } from './routes/dispatch-run.js';
+import { dispatchManualRouter } from './routes/dispatch-manual.js';
+import { deliveryWebhookRouter } from './routes/delivery-webhook.js';
 
 /**
  * Builds the Express worker app: cron-driven reminder dispatch + provider
@@ -27,7 +30,10 @@ export function createApp(): Express {
     res.json({ status: 'ok' });
   });
 
-  // Routes mounted in Phase 9 (US7): /internal/dispatch/*, /webhooks/sms/delivery.
+  // Phase 9 (US7): reminder dispatch + provider delivery webhook.
+  app.use(dispatchRunRouter);
+  app.use(dispatchManualRouter);
+  app.use(deliveryWebhookRouter);
 
   return app;
 }
