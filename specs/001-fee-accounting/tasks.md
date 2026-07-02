@@ -247,18 +247,18 @@ confirm correct buckets, filter by grade, confirm bucket totals + export.
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T093 [P] [US5] Playwright E2E (G4): student statement renders RTL Arabic, running balance + total owed correct, exports PDF, in `packages/web/tests/us5-statement.spec.ts`
-- [ ] T094 [P] [US5] Playwright E2E: receivables report buckets are correct, grade/stage/section filters change list + bucket totals, exports tabular, in `packages/web/tests/us5-receivables.spec.ts`
-- [ ] T095 [P] [US5] Vitest: aging-bucket assignment in Africa/Khartoum (boundaries 0/30/60/90), withdrawn/graduated students with a balance still appear (Edge case), in `packages/database/src/functions/receivables.test.ts`
+- [X] T093 [P] [US5] Playwright E2E (G4): student statement renders RTL Arabic, running balance + total owed correct, exports PDF, in `packages/web/tests/us5-statement.spec.ts`
+- [X] T094 [P] [US5] Playwright E2E: receivables report buckets are correct, grade/stage/section filters change list + bucket totals, exports tabular, in `packages/web/tests/us5-receivables.spec.ts`
+- [X] T095 [P] [US5] Vitest: aging-bucket assignment in Africa/Khartoum (boundaries 0/30/60/90), withdrawn/graduated students with a balance still appear (Edge case), in `packages/database/src/functions/receivables.test.ts`
 
 ### Implementation for User Story 5
 
-- [ ] T096 [US5] Implement statement query (ordered charges/discounts/payments/refunds with running balance + total owed) in `packages/database/functions/student_statement.sql` and `packages/web/lib/queries/statement.ts`
-- [ ] T097 [US5] Implement receivables aging query (unpaid students bucketed, filterable by stage/grade/section, per-bucket totals; windows in Africa/Khartoum) in `packages/database/functions/receivables_aging.sql` and `packages/web/lib/queries/receivables.ts`
-- [ ] T098 [P] [US5] Student statement page (TanStack Table, RTL) in `packages/web/app/(school)/students/[studentId]/statement/page.tsx`
-- [ ] T099 [P] [US5] Statement PDF template (RTL Arabic, SDG) in `packages/web/pdf/statement.tsx` with export route `packages/web/app/(school)/students/[studentId]/statement/pdf/route.ts`
-- [ ] T100 [P] [US5] Receivables report page with filters + per-bucket totals (TanStack Table/Virtual) in `packages/web/app/(school)/reports/receivables/page.tsx`
-- [ ] T101 [US5] Tabular export (CSV/PDF) of the receivables report in `packages/web/lib/export/receivables-export.ts`
+- [X] T096 [US5] Implement statement query (ordered charges/discounts/payments/refunds with running balance + total owed) in `packages/database/functions/student_statement.sql` and `packages/web/lib/queries/statement.ts`
+- [X] T097 [US5] Implement receivables aging query (unpaid students bucketed, filterable by stage/grade/section, per-bucket totals; windows in Africa/Khartoum) in `packages/database/functions/receivables_aging.sql` and `packages/web/lib/queries/receivables.ts`
+- [X] T098 [P] [US5] Student statement page (TanStack Table, RTL) in `packages/web/app/(school)/students/[studentId]/statement/page.tsx`
+- [X] T099 [P] [US5] Statement PDF template (RTL Arabic, SDG) in `packages/web/pdf/statement.tsx` with export route `packages/web/app/(school)/students/[studentId]/statement/pdf/route.ts`
+- [X] T100 [P] [US5] Receivables report page with filters + per-bucket totals (TanStack Table/Virtual) in `packages/web/app/(school)/reports/receivables/page.tsx`
+- [X] T101 [US5] Tabular export (CSV/PDF) of the receivables report in `packages/web/lib/export/receivables-export.ts`
 
 **Checkpoint**: A bursar can produce a correct student statement and the receivables aging report, both exportable.
 
@@ -275,15 +275,15 @@ confirm each account balance, combined total, KPIs, SMS credit, and countdown ar
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T102 [P] [US6] Playwright E2E (G1): dashboard KPIs match event-sum derived figures; account balances + combined total correct, in `packages/web/tests/us6-dashboard.spec.ts`
-- [ ] T103 [P] [US6] Vitest: collection rate, net cash flow, overdue count aggregates correct in Africa/Khartoum month/year windows, in `packages/database/src/functions/dashboard_kpis.test.ts`
+- [X] T102 [P] [US6] Playwright E2E (G1): dashboard KPIs match event-sum derived figures; account balances + combined total correct, in `packages/web/tests/us6-dashboard.spec.ts`
+- [X] T103 [P] [US6] Vitest: collection rate, net cash flow, overdue count aggregates correct in Africa/Khartoum month/year windows, in `packages/database/src/functions/dashboard_kpis.test.ts`
 
 ### Implementation for User Story 6
 
-- [ ] T104 [US6] Implement dashboard KPI query bundle (per-account + combined balance, collected month/year, outstanding, collection rate, monthly expenses, net cash flow, overdue count, derived SMS credit) in `packages/database/functions/dashboard_kpis.sql` and `packages/web/lib/queries/dashboard.ts`
-- [ ] T105 [P] [US6] Dashboard page laying out account cards + KPI tiles (RTL, ≤3 s budget) in `packages/web/app/(school)/dashboard/page.tsx`
-- [ ] T106 [P] [US6] Pinned subscription countdown banner (days remaining + lifecycle state) component in `packages/ui/src/components/subscription-banner.tsx` mounted in the school app shell
-- [ ] T107 [P] [US6] SMS-credit-remaining + low-credit indicator tile in `packages/web/components/dashboard/credit-tile.tsx`
+- [X] T104 [US6] Implement dashboard KPI query bundle (per-account + combined balance, collected month/year, outstanding, collection rate, monthly expenses, net cash flow, overdue count, derived SMS credit) in `packages/database/functions/dashboard_kpis.sql` and `packages/web/lib/queries/dashboard.ts`
+- [X] T105 [P] [US6] Dashboard page laying out account cards + KPI tiles (RTL, ≤3 s budget) in `packages/web/app/(school)/dashboard/page.tsx`
+- [X] T106 [P] [US6] Pinned subscription countdown banner (days remaining + lifecycle state) component in `packages/ui/src/components/subscription-banner.tsx` mounted in the school app shell
+- [X] T107 [P] [US6] SMS-credit-remaining + low-credit indicator tile in `packages/web/components/dashboard/credit-tile.tsx`
 
 **Checkpoint**: The admin sees a correct, fully derived operating picture with the subscription countdown.
 
