@@ -136,6 +136,18 @@ begin
   insert into public.audit_entry (school_id, money_event_id, actor_user_id, action)
   values (v_school_id, v_event_id, auth.uid(), 'apply_fee_payment');
 
+  -- T132 (US9): notify the actor a payment was recorded. Additive only —
+  -- does not affect the money_event/receipt/allocation result above.
+  if auth.uid() is not null then
+    perform public.emit_notification(
+      v_school_id, auth.uid(), 'payment_recorded',
+      jsonb_build_object(
+        'money_event_id', v_event_id,
+        'receipt_no', v_receipt_no,
+        'amount', p_amount,
+        'student_id', p_student_id));
+  end if;
+
   select jsonb_agg(jsonb_build_object(
            'installment_id', pa.installment_id,
            'running_balance_after', public.installment_running_balance(pa.installment_id)::text))

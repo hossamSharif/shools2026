@@ -337,14 +337,14 @@ allowed, money events blocked); move past grace → confirm full lock except vie
 
 ### Tests for User Story 8 ⚠️
 
-- [ ] T125 [P] [US8] Vitest: every money RPC rejects with `WRITES_GATED` in grace/locked; reads/exports still succeed (SC-009), in `packages/database/src/functions/write_gating_enforcement.test.ts`
-- [ ] T126 [P] [US8] Playwright E2E (G3.4): grace → read-only UI; locked → view/export-only; new money events blocked 100%, in `packages/web/tests/us8-lifecycle.spec.ts`
+- [X] T125 [P] [US8] Vitest: every money RPC rejects with `WRITES_GATED` in grace/locked; reads/exports still succeed (SC-009), in `packages/database/src/functions/write_gating_enforcement.test.ts`
+- [X] T126 [P] [US8] Playwright E2E (G3.4): grace → read-only UI; locked → view/export-only; new money events blocked 100%, in `packages/web/tests/us8-lifecycle.spec.ts`
 
 ### Implementation for User Story 8
 
-- [ ] T127 [US8] Wire `assert_writes_allowed` into every money/credit RPC (verify `apply_fee_payment`, `record_*`, `apply_discount`, `consume_sms_credit`, `reverse_event` all gate) — migration touch-up in `packages/database/migrations/0019_enforce_write_gating.sql` (money-migration → owner review)
-- [ ] T128 [P] [US8] UI write-gating: hide/disable all mutate actions in grace/locked, keep view/export, in `packages/web/lib/auth/lifecycle-gate.ts` and `packages/web/components/lifecycle-banner.tsx`
-- [ ] T129 [P] [US8] Reflect lifecycle state + remaining days in the pinned countdown banner (extend US6 banner) in `packages/ui/src/components/subscription-banner.tsx`
+- [X] T127 [US8] Wire `assert_writes_allowed` into every money/credit RPC (verify `apply_fee_payment`, `record_*`, `apply_discount`, `consume_sms_credit`, `reverse_event` all gate) — migration touch-up in `packages/database/migrations/0019_enforce_write_gating.sql` (money-migration → owner review)
+- [X] T128 [P] [US8] UI write-gating: hide/disable all mutate actions in grace/locked, keep view/export, in `packages/web/lib/auth/lifecycle-gate.ts` and `packages/web/components/lifecycle-banner.tsx`
+- [X] T129 [P] [US8] Reflect lifecycle state + remaining days in the pinned countdown banner (extend US6 banner) in `packages/ui/src/components/subscription-banner.tsx`
 
 **Checkpoint**: Lifecycle state machine enforces read-only/locked at the DB authority and in the UI.
 
@@ -360,13 +360,13 @@ surfaces in-app to the relevant user with no external message sent.
 
 ### Tests for User Story 9 ⚠️
 
-- [ ] T130 [P] [US9] Playwright E2E: payment → "payment recorded" notification; low credit → low-credit notification; near expiry → expiring-soon notification; no SMS/push sent, in `packages/web/tests/us9-notifications.spec.ts`
+- [X] T130 [P] [US9] Playwright E2E: payment → "payment recorded" notification; low credit → low-credit notification; near expiry → expiring-soon notification; no SMS/push sent, in `packages/web/tests/us9-notifications.spec.ts`
 
 ### Implementation for User Story 9
 
-- [ ] T131 [US9] Migration: `notification` (school_id, user_id, type `payment_recorded|low_sms_credit|subscription_expiring`, payload, read_at nullable, created_at) with RLS + GRANTs, in `packages/database/migrations/0020_notifications.sql`
-- [ ] T132 [US9] Emit notifications: payment-recorded (from `apply_fee_payment` path), low-credit (from `consume_sms_credit`/threshold), expiring-soon (from cron/lifecycle) in `packages/database/functions/emit_notifications.sql` and `packages/api/src/cron/expiry-notifications.ts`
-- [ ] T133 [P] [US9] Notification center bell UI (list, unread, mark-read) in `packages/web/components/notifications/bell.tsx` and `packages/web/app/(school)/notifications/page.tsx`
+- [X] T131 [US9] Migration: `notification` (school_id, user_id, type `payment_recorded|low_sms_credit|subscription_expiring`, payload, read_at nullable, created_at) with RLS + GRANTs, in `packages/database/migrations/0020_notifications.sql`
+- [X] T132 [US9] Emit notifications: payment-recorded (from `apply_fee_payment` path), low-credit (from `consume_sms_credit`/threshold), expiring-soon (from cron/lifecycle) in `packages/database/functions/emit_notifications.sql` and `packages/api/src/cron/expiry-notifications.ts`
+- [X] T133 [P] [US9] Notification center bell UI (list, unread, mark-read) in `packages/web/components/notifications/bell.tsx` and `packages/web/app/(school)/notifications/page.tsx`
 
 **Checkpoint**: The notification center surfaces the three event types in-app with no external delivery.
 

@@ -12,3 +12,8 @@ export {
   DialogTitle,
 } from './components/dialog.js';
 export { DataTable, type DataTableProps } from './components/data-table.js';
+export {
+  SubscriptionBanner,
+  type SubscriptionBannerProps,
+  type LifecycleState,
+} from './components/subscription-banner.js';

@@ -5,7 +5,7 @@ import { AppShell } from '../../components/app-shell.js';
 export default async function SchoolLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireRole('school_admin', 'accountant', 'viewer');
   return (
-    <AppShell role={ctx.role} displayName={ctx.displayName}>
+    <AppShell role={ctx.role} displayName={ctx.displayName} schoolId={ctx.schoolId}>
       {children}
     </AppShell>
   );
