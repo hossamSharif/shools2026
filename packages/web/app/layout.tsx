@@ -7,6 +7,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'نظام محاسبة الرسوم المدرسية',
   description: 'System of Record — School Fee Accounting',
+  manifest: '/manifest.webmanifest',
 };
 
 /**

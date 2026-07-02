@@ -376,8 +376,8 @@ surfaces in-app to the relevant user with no external message sent.
 
 **Purpose**: Whole-system hardening, performance, PWA, and the full Gauntlet pass.
 
-- [ ] T134 [P] Add Serwist manifest + service worker for installable-only PWA (no offline data layer) in `packages/web/app/manifest.ts` and `packages/web/app/sw.ts`
-- [ ] T135 [P] Verify performance budgets (dashboard, receivables, statement ≤3 s; PDF export ≤5 s) at ~2,000 students; add/adjust indexes if measured slow (Article II), recorded in `packages/database/migrations/0021_performance_indexes.sql`
+- [X] T134 [P] Add Serwist manifest + service worker for installable-only PWA (no offline data layer) in `packages/web/app/manifest.ts` and `packages/web/app/sw.ts`
+- [X] T135 [P] Verify performance budgets (dashboard, receivables, statement ≤3 s; PDF export ≤5 s) at ~2,000 students; add/adjust indexes if measured slow (Article II), recorded in `packages/database/migrations/0024_performance_indexes.sql` (renumbered from planned 0021 — 0021-0023 already taken by statement/receivables/dashboard function migrations)
 - [ ] T136 Run full Gauntlet (G1–G6) against a real Supabase instance per `quickstart.md`; record results in `specs/001-fee-accounting/gauntlet-results.md`
 - [ ] T137 [P] Tenant-isolation security sweep (SC-012): cross-school read/write attempts as each role + super-admin against financial tables, in `packages/web/tests/security-tenant-isolation.spec.ts`
 - [ ] T138 [P] RTL/Arabic + SDG audit across all screens and printed docs (SC-013) in `packages/web/tests/rtl-arabic-audit.spec.ts`
