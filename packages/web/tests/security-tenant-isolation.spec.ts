@@ -79,7 +79,7 @@ test.describe('T137 — tenant-isolation security sweep (SC-012)', () => {
       for (const table of financialTables) {
         const { data, error } = await client
           .from(table)
-          .select('id')
+          .select('*')
           .eq('school_id', schoolBId as string);
         // RLS default-deny: either an error (no SELECT grant path) or zero rows.
         expect(data === null || (data ?? []).length === 0 || error !== null).toBe(true);
@@ -113,7 +113,7 @@ test.describe('T137 — tenant-isolation security sweep (SC-012)', () => {
     );
     const client = await signIn(superAdminEmail!, superAdminPassword!);
     for (const table of financialTables) {
-      const { data, error } = await client.from(table).select('id');
+      const { data, error } = await client.from(table).select('*');
       expect(error).toBeNull();
       expect(data ?? []).toHaveLength(0);
     }
