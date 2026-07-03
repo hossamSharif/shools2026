@@ -1,90 +1,208 @@
-# The Gauntlet — Results (T136 / T141)
+# The Gauntlet — Results (T136 / T141, re-run with seeded data)
 
-Run date: 2026-07-03. Supabase project: `schools` (`euumbaotyarjtcvwamax`, ACTIVE_HEALTHY,
-eu-central-1, Postgres 17). All 24 migrations (0001–0024) applied; all functions from Phases
-3–11 present.
+Run date: 2026-07-03 (follow-up session). Supabase project: `schools`
+(`euumbaotyarjtcvwamax`, ACTIVE_HEALTHY, eu-central-1, Postgres 17).
 
-## Honest summary up front
+## What changed since the previous run
 
-This environment has **no seeded test users, no `.env` file, and no `SUPABASE_SERVICE_ROLE_KEY`
-available to this agent** (Supabase MCP intentionally does not expose the service-role secret —
-only publishable/anon keys are retrievable). That means:
+The previous run (see history below) could not exercise G1/G2/G3/G5 because there was no
+seeded multi-role/multi-school test data and no service-role credential. This session:
 
-- The **Vitest integration suites** in `packages/database` (which *do* exercise G1/G2/G3-style
-  checks with real signed-in users via `createAuthedUser` in
-  `packages/database/src/test-helpers/supabase.ts`) **skip gracefully** — they gate on
-  `INTEGRATION_ENV_READY` and report `12 skipped (38 tests)` in this run, not failures. They will
-  run for real once an operator supplies `SUPABASE_URL` / `SUPABASE_ANON_KEY` /
-  `SUPABASE_SERVICE_ROLE_KEY` as env vars (see `.env.example`).
-- The **Playwright E2E specs** (`packages/web/tests/*.spec.ts`, including the two new specs
-  added this phase) similarly skip without a running dev server + seeded auth users
-  (`E2E_*_EMAIL` / `_PASSWORD` env vars). None were run to completion in this session.
-- What **was** run and verified live: unit-only Vitest (no DB dependency), static SQL/schema
-  verification via Supabase MCP `execute_sql`/`get_advisors`/`list_tables` directly against the
-  real project, and full-workspace `pnpm -w typecheck`.
+1. Seeded real test data directly via Supabase MCP `execute_sql` (test data, not schema —
+   committed at `packages/database/seeds/test_gauntlet_data.sql`):
+   - 2 schools ("Gauntlet School A" / "Gauntlet School B") with active subscriptions.
+   - 5 auth users (`auth.users` + `auth.identities`, password `password123` via
+     `pgcrypto`/`crypt`) + matching `public.user` rows: `super_admin` (school-less),
+     School A's `school_admin` / `accountant` / `viewer`, School B's `school_admin`.
+   - School A spine: 1 academic year, 2 sections, 2 accounts (cash `50,000` SDG opening +
+     bank `200,000` SDG opening), a fee structure (grade `p1`, 2 fee items, 3-installment
+     schedule), 12 students + enrollments — **installments generated via the real
+     `generate_installments()` trigger/RPC**, not hand-inserted (36 rows for 12 students ×
+     3 installments, verified by count).
+   - 6 real money events posted via the actual Postgres RPCs (`apply_fee_payment` ×2,
+     `record_expense`, `record_transfer`, `record_refund`, `apply_discount`, plus an SMS
+     credit `topup_sms_credit` + a manual `sms_message_log`/`sms_credit_consumption` row).
+2. To call the `SECURITY DEFINER` money RPCs meaningfully as a specific tenant user from
+   raw SQL (which otherwise runs as the `postgres` role with `auth.uid()` null), sessions
+   were impersonated with `SELECT set_config('request.jwt.claims', '{"sub":"<uid>",
+   "role":"authenticated"}', true); SET LOCAL role authenticated;` inside an explicit
+   `BEGIN…COMMIT`, matching exactly how `auth.uid()` is implemented in this project
+   (confirmed by reading `pg_proc.prosrc` for `auth.uid()` before using this approach).
+3. Ran the **real** Playwright specs that were already fully written (not skeletons) against
+   the live project with the seeded users as real env vars — see G3/G5 below.
+4. Found and fixed one real bug in a test spec (not app code) — see "Bug found & fixed".
 
-This is reported honestly per instructions rather than claiming false green E2E/G-checks.
+## G1 — Reconciliation: **PASS** (live, evidence below)
 
-## What ran and passed
+Two independent computations — event-sum (raw `money_event`/`payment_allocation`/
+`discount` rows, summed by hand) vs. derived (the project's own `account_balance()` /
+`student_balance()` / `installment_running_balance()` SQL functions) — were compared for
+all three levels the constitution requires. All matched **exactly**, to the SDG cent.
 
-| Suite | Result |
-|---|---|
-| `pnpm --filter @erp/shared test` | ✅ 6/6 passed (SMS segment-count unit tests) |
-| `pnpm --filter @erp/api test` | ✅ 10/10 passed (dispatch-rules, dispatch-credit-integrity, delivery-webhook — all pure-logic unit tests, no live DB) |
-| `pnpm --filter @erp/database test` | ⚠️ 12 files / 38 tests **skipped** — `INTEGRATION_ENV_READY` is false (no `SUPABASE_SERVICE_ROLE_KEY` in this shell). Not a failure; needs operator-supplied secrets. |
-| `pnpm -w typecheck` | ✅ green across all 5 packages (`@erp/shared`, `@erp/database`, `@erp/ui`, `@erp/web`, `@erp/api`) after regenerating `packages/database/src/types/database.ts` (T139) |
-| `pnpm -w test` (turbo, all packages) | ✅ 6/6 tasks successful (shared+api tests pass; database tests skip as above) |
+**Account balance** (opening + Σevents):
 
-## Definition-of-Done structural checks (verified live via Supabase MCP, T141)
+| account | opening | event-sum | derived (`account_balance()`) |
+|---|---|---|---|
+| الخزينة الرئيسية (cash) | 50,000.00 | 45,500.00 | 45,500.00 |
+| حساب بنكي (bank) | 200,000.00 | 207,666.67 | 207,666.67 |
 
-Queried `pg_tables` joined to `information_schema.columns`, `pg_policies`, and
-`information_schema.role_table_grants` for every `public` table:
+**Student balance** (charges − discounts − paid + refunds):
 
-- **Every tenant table has `school_id`**: confirmed for all 21 tenant-scoped tables
-  (`academic_year`, `account`, `audit_entry`, `discount`, `enrollment`, `fee_item`,
-  `fee_structure`, `installment`, `installment_schedule`, `money_event`, `notification`,
-  `payment_allocation`, `receipt_counter`, `reminder_rule`, `section`,
-  `sms_credit_consumption`, `sms_credit_topup`, `sms_message_log`, `student`, `subscription`,
-  `user`). The only tables *without* `school_id` are `school`, `stage`, `grade` — correctly
-  global reference/root data, not tenant-scoped.
-- **RLS enabled on every table**: `list_tables` confirms `rls_enabled: true` on all 24 tables.
-- **Every table has ≥1 RLS policy and explicit GRANTs** to `authenticated`/`anon`: confirmed —
-  `policy_count ≥ 1` and `has_grants = true` for all 24 tables (see raw query in session; several
-  tables correctly have 2–3 policies, e.g. `user` has self/same-school/super-admin policies).
-- `get_advisors(type=security)`: only WARN-level findings, all expected —
-  `SECURITY DEFINER` functions (`apply_fee_payment`, `record_*`, `apply_discount`,
-  `consume_sms_credit`, `reverse_event`, `topup_sms_credit`, the derived-balance/statement/
-  receivables/dashboard read functions, etc.) are *intentionally* SECURITY DEFINER so they can
-  enforce write-gating/role checks internally while running with elevated privilege; each
-  function itself checks `current_role()`/`current_is_super_admin()`/`assert_writes_allowed`
-  before mutating. No missing-RLS or public-write findings.
-- `get_advisors(type=performance)`: only INFO/WARN — unindexed-FK notices (largely addressed by
-  migration `0024_performance_indexes.sql`, T135), a couple of `auth_rls_initplan` WARNs on
-  low-traffic tables (`user`, `notification` — not on the money hot path, left as a known,
-  low-priority follow-up), and `multiple_permissive_policies` on `school`/`sms_credit_topup`/
-  `subscription`/`user` (super-admin-all + tenant-read policies are intentionally separate for
-  auditability; a minor perf cost, not a correctness issue).
+| student | charged | discount | paid | refunded | event-sum | derived (`student_balance()`) |
+|---|---|---|---|---|---|---|
+| student 01 | 9,500.00 | 0 | 2,000.00 | 0 | 7,500.00 | 7,500.00 |
+| student 02 | 9,500.00 | 0 | 3,166.67 | 500.00 | 6,833.33 | 6,833.33 |
+| student 03 | 9,500.00 | 300.00 | 0 | 0 | 9,200.00 | 9,200.00 |
 
-## G1–G6 status
+**Installment running balance** (student 01, 3 installments):
+
+| seq | charged | event-sum | derived (`installment_running_balance()`) |
+|---|---|---|---|
+| 1 | 3,166.67 | 1,166.67 | 1,166.67 |
+| 2 | 3,166.67 | 3,166.67 | 3,166.67 |
+| 3 | 3,166.66 | 3,166.66 | 3,166.66 |
+
+All three reconciliation levels: **zero drift**.
+
+## G2 — Receipt concurrency: **partially verified; true parallel test still blocked (environment limitation)**
+
+- The Vitest suite `apply_fee_payment.concurrency.test.ts` requires `SUPABASE_SERVICE_ROLE_KEY`
+  (via `getServiceClient()`/`createAuthedUser()` in `test-helpers/supabase.ts`). Supabase MCP
+  intentionally does not expose this secret (only `get_publishable_keys` — anon/publishable —
+  is retrievable). Ran `pnpm --filter @erp/database test` with `SUPABASE_URL`/`SUPABASE_ANON_KEY`
+  set (no service key): **12 files / 38 tests still skip** (`INTEGRATION_ENV_READY` false).
+  This is a genuine environment limitation, not a code gap — confirmed by re-running in this
+  session.
+- What **was** verified live: the two sequential `apply_fee_payment` calls made while seeding
+  (for students 01 and 02) were issued `receipt_no` **1** and **2** respectively — gapless,
+  unique — and `receipt_counter.next_value` is now `3`, consistent with exactly 2 receipts
+  issued. This confirms the counter mechanism functions correctly under real transactions, but
+  it is **sequential evidence, not a substitute for the true parallel-load assertion** the
+  Vitest suite performs (N simultaneous `Promise.all` calls). The parallel-load property
+  remains unverified in this environment.
+
+## G3 — Money-critical E2E paths: **partially PASS (live Playwright), rest environment-blocked**
+
+Two Playwright specs in `packages/web/tests/` were already fully implemented (no `TODO`
+skeletons, pure Supabase-client assertions, no UI navigation) rather than skip-scaffolded —
+these were run for real, live, against the seeded project:
+
+- `us1-superadmin-isolation.spec.ts` — **1/1 passed** (super-admin reads zero rows from
+  `sms_credit_consumption`, a financial table, even with real consumption data seeded).
+- `security-tenant-isolation.spec.ts` (T137) — **7/7 passed** after a bug fix (see below):
+  school_admin/accountant/viewer for School A each (a) read zero rows cross-school from 7
+  financial tables when querying School B's `school_id`, and (b) have `apply_fee_payment`
+  rejected when targeting School B; super-admin reads zero rows across all 7 financial
+  tables.
+
+The remaining G3 specs (`us3-fee-payment.spec.ts`, `us4-money-events.spec.ts`,
+`us7-reminders.spec.ts`, `us8-lifecycle.spec.ts`, `rtl-arabic-audit.spec.ts`) are **UI-navigation
+skeletons** — they contain `test.skip(...)` with `// TODO` bodies (e.g. "goto /students/:id/pay",
+"enter amount, choose account, submit") rather than working selectors against the real app UI.
+Writing real selectors for these from scratch without having interactively driven the actual
+rendered pages risks fabricating tests that assert the wrong thing, so they were **not**
+un-skipped this session — doing so honestly requires either (a) interactively exploring the
+running app first to get real selectors, or (b) the original feature author finishing them.
+This is a **pre-existing code/spec-authoring gap**, not purely an environment limitation:
+Playwright itself works fine here (Chromium is installed at
+`~/AppData/Local/ms-playwright`, `npx playwright test` runs), so a running `next dev` + these
+two proven-runnable specs prove the mechanism end-to-end; the gap is that 5 of 7 specs are
+unfinished skeletons.
+
+Backend logic for the skeleton specs' underlying flows (`apply_fee_payment`, `record_expense`,
+`record_transfer`, `record_refund`, `apply_discount`) **was** independently verified via direct
+SQL/RPC calls in this session (see G1 evidence + the money-event table dump: `fee_payment` ×2,
+`expense` ×1, `transfer` ×1, `refund` ×1 all posted correctly with correct account/student
+linkage) — so "backend logic verified via SQL RPC calls; full UI E2E for these 5 specs remains
+unwritten, not merely unrun."
+
+## Bug found & fixed (test spec, not app code)
+
+`packages/web/tests/security-tenant-isolation.spec.ts` called `.select('id')` uniformly across
+7 financial tables, but `public.receipt_counter`'s primary key is `school_id` — it has **no**
+`id` column at all (confirmed via `list_tables`). Running the spec live surfaced a real
+Postgres error (`42703: column receipt_counter.id does not exist`) that would have made this
+test permanently fail once un-skipped, regardless of RLS correctness. Fixed by changing both
+occurrences to `.select('*')` (the assertions only check row *count*, not specific columns).
+Committed separately from the seed-data commit as a test-only fix.
+
+## G4 — RTL/Arabic assertions: unchanged from previous run (static, partial)
+
+Left as previously assessed: static grep across `packages/web/app/**/*.tsx` found zero
+hardcoded non-Arabic literals; root layout sets `dir="rtl"`/`lang="ar"`. The live
+`rtl-arabic-audit.spec.ts` still requires a running `next dev` server and its 4 tests
+navigate real pages (`/dashboard`, receipt/statement links, `/reports/receivables`) that
+were not driven interactively this session — not re-attempted for the same "unfinished
+skeleton" reason as above, layered on the added requirement of a running dev server.
+
+## G5 — Tenant isolation: **PASS (live, both SQL-direct and Playwright)**
+
+Verified twice, independently:
+
+1. **Direct SQL**, impersonating each seeded user via `request.jwt.claims` + `SET LOCAL role
+   authenticated` (the mechanism `quickstart.md`/the constitution implies, and the only way
+   to exercise per-role RLS from a raw connection that would otherwise run as `postgres`):
+   - School A `school_admin` reading School B's `student` rows: **0 rows** (RLS blocked the
+     read entirely).
+   - School A `school_admin` attempting `apply_fee_payment` against a School-B student (found
+     via a cross-school subquery that itself returned nothing under RLS): **rejected**
+     (`STUDENT_NOT_FOUND`, because the underlying read was already walled off by RLS).
+   - Super-admin reading `account`, `installment`, `student`, `receipt_counter` directly:
+     **0 rows on every table** (no super-admin policy exists on financial/tenant tables).
+2. **Live Playwright** (`us1-superadmin-isolation.spec.ts` + `security-tenant-isolation.spec.ts`,
+   8 tests total): **8/8 passed** — see G3 section above for the breakdown.
+
+This supersedes the previous run's "partially verified (structural)" status — G5 is now
+directly, behaviorally verified end-to-end.
+
+## G6 — SMS credit integrity: unchanged from previous run (unit-verified)
+
+`packages/api/src/tests/dispatch-credit-integrity.test.ts` — 2/2 passed live (pure-logic,
+no live DB dependency). The DB-level `consume_sms_credit` Postgres-function integration test
+remains unverified for the same `SUPABASE_SERVICE_ROLE_KEY` gap as G2. A real `topup_sms_credit`
+RPC call was exercised this session (100 credits topped up for School A, balance confirmed via
+its own return value: `credit_balance_after: 100`) and one manual `sms_message_log` +
+`sms_credit_consumption` row was inserted to give the isolation tests real data to walk over,
+but the atomic send+decrement path itself (`consume_sms_credit`) was not additionally exercised
+this session.
+
+## Summary table
 
 | Gauntlet check | Status | Evidence |
 |---|---|---|
-| G1 — Reconciliation | **Unverified this session** | The Vitest reconciliation tests (`apply_fee_payment.test.ts`, `money_events.test.ts`, `dashboard_kpis.test.ts`, `receivables.test.ts`) exist and are written to do exactly this (event-sum vs. derived-figure equality) but require `SUPABASE_SERVICE_ROLE_KEY`, not available to this agent. All tables are empty (0 rows) in the live project, so there is also no production data to spot-check by hand. |
-| G2 — Receipt concurrency | **Unverified this session** | `apply_fee_payment.concurrency.test.ts` exists (parallel-insert gaplessness assertion) but same env-secret gap as above. |
-| G3 — Money-critical E2E | **Unverified this session** | Playwright specs exist for 3.1 (`us3-fee-payment.spec.ts`), 3.2 (`us4-money-events.spec.ts`), 3.3 (`us7-reminders.spec.ts` + api Vitest), 3.4 (`us8-lifecycle.spec.ts`), all previously authored; none run to completion here — no dev server/seeded auth in this shell. |
-| G4 — RTL/Arabic assertions | **Partially verified (static)** | Static grep across `packages/web/app/**/*.tsx` for hardcoded non-Arabic JSX text/placeholder/title/aria-label found **zero hits** — all copy flows through next-intl or Arabic literals. `packages/web/app/layout.tsx` sets `dir="rtl"` / `lang="ar"` at the document root. Live Playwright assertions in the new `rtl-arabic-audit.spec.ts` (T138) are skip-scaffolded pending a running server + seeded fixture data. |
-| G5 — Tenant isolation | **Partially verified (structural)** | RLS/GRANT structural check above (T141) confirms default-deny posture DB-wide. The pre-existing `us1-superadmin-isolation.spec.ts` and the new `security-tenant-isolation.spec.ts` (T137) assert this live per-role but are skip-scaffolded pending seeded multi-school/multi-role fixtures + auth env. |
-| G6 — SMS credit integrity | **Unit-verified** | `packages/api/src/tests/dispatch-credit-integrity.test.ts` — 2/2 **passed live** in this run (pure-logic; simulates atomic decrement/never-negative/no-double-charge without needing a live DB connection, per its design). The DB-level atomic `consume_sms_credit` Postgres-function integration test (in `packages/database`) is unverified for the same env-secret reason as G1/G2. |
+| G1 — Reconciliation | **PASS** | Live SQL, 3 levels, zero drift (tables above) |
+| G2 — Receipt concurrency | **Partial** | Sequential gapless receipts (1,2) confirmed live; true N-parallel Vitest suite still blocked — needs `SUPABASE_SERVICE_ROLE_KEY` (environment limitation) |
+| G3 — Money-critical E2E | **Partial PASS** | 2/7 specs fully implemented and passing live (8 tests); remaining 5 are unfinished UI skeletons (code/spec gap, not environment) — their backend RPCs independently SQL-verified |
+| G4 — RTL/Arabic | **Partial (static)** | Unchanged from prior run; live spec needs a driven dev server session |
+| G5 — Tenant isolation | **PASS** | Live SQL impersonation + live Playwright, 8/8 tests passing |
+| G6 — SMS credit integrity | **Unit-verified** | Unchanged; `topup_sms_credit` RPC exercised live this session |
 
-## Follow-ups before this branch is truly Gauntlet-green
+## Honest remaining gaps
 
-1. Supply `SUPABASE_URL` / `SUPABASE_ANON_KEY` / `SUPABASE_SERVICE_ROLE_KEY` as real env vars
-   (not retrievable via MCP by design) and re-run `pnpm --filter @erp/database test` — this
-   alone unlocks 38 currently-skipped integration tests covering G1/G2 directly.
-2. Seed a demo school + one user per role (`super_admin`, `school_admin`, `accountant`,
-   `viewer`) plus `E2E_*` env vars, start `pnpm --filter @erp/web dev`, and run
-   `pnpm --filter @erp/web exec playwright test` — this unlocks G3/G4/G5 live Playwright
-   assertions across all existing + new (T137/T138) specs.
-3. Optional perf follow-up: the two `auth_rls_initplan` WARNs (`user`, `notification`) can be
-   resolved by wrapping `auth.*()` calls in `(select auth.*())` in those two policies; low
-   priority since neither is on the money read/write hot path.
+1. **G2 true parallel test**: needs `SUPABASE_SERVICE_ROLE_KEY` as a real env var (never
+   retrievable via MCP by design) to unlock `pnpm --filter @erp/database test` — 38 tests
+   including the concurrency suite.
+2. **G3 remaining 5 specs**: need to be *written* (not just un-skipped) against the real
+   rendered app UI — requires an operator or a session that interactively drives `next dev`
+   with a browser to discover real selectors, then fills in the `TODO`s.
+3. **G4 live spec**: same as above, needs a driven dev-server session with seeded
+   receipt/statement data to click through.
+
+## Previous run's findings (superseded above, kept for history)
+
+<details>
+<summary>Original run (2026-07-03, no seeded data)</summary>
+
+This environment initially had no seeded test users, no `.env` file, and no
+`SUPABASE_SERVICE_ROLE_KEY`. All 24 migrations (0001–0024) were applied; all functions from
+Phases 3–11 present. Definition-of-Done structural checks (T141) were confirmed live via
+Supabase MCP: every tenant table has `school_id` (21 tables), RLS enabled + ≥1 policy +
+explicit GRANTs on every table (24 tables), `get_advisors` showed only expected
+`SECURITY DEFINER` WARNs and minor performance INFO/WARNs. `pnpm --filter @erp/shared test`
+(6/6), `pnpm --filter @erp/api test` (10/10), `pnpm -w typecheck` (green) all passed;
+`pnpm --filter @erp/database test` reported 38 tests skipped (env gap). G1–G3/G5 were
+"unverified this session" for lack of seeded data + service-role secret; G4 was "partially
+verified (static)"; G6 was "unit-verified" only. This full run is now superseded by the
+seeded-data verification above.
+
+</details>
