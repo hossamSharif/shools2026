@@ -1,35 +1,9 @@
 import { notFound } from 'next/navigation';
-import type { ColumnDef } from '@tanstack/react-table';
-import { DataTable, Card, CardContent } from '@erp/ui';
+import { Card, CardContent } from '@erp/ui';
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server.js';
-import { studentStatement, totalOwed, type StatementEntry } from '../../../../../lib/queries/statement.js';
-import { formatDate } from '../../../../../lib/format/date.js';
+import { studentStatement, totalOwed } from '../../../../../lib/queries/statement.js';
 import { formatCurrency } from '../../../../../lib/format/currency.js';
-
-const TYPE_LABEL_AR: Record<StatementEntry['entry_type'], string> = {
-  charge: 'قسط',
-  payment: 'دفعة',
-  discount: 'خصم',
-  adjustment: 'تسوية',
-  refund: 'استرداد',
-};
-
-const columns: ColumnDef<StatementEntry, unknown>[] = [
-  { accessorKey: 'entry_date', header: 'التاريخ', cell: (c) => formatDate(c.getValue() as string) },
-  {
-    accessorKey: 'entry_type',
-    header: 'النوع',
-    cell: (c) => TYPE_LABEL_AR[c.getValue() as StatementEntry['entry_type']],
-  },
-  { accessorKey: 'description', header: 'الوصف' },
-  { accessorKey: 'charge', header: 'مدين', cell: (c) => formatCurrency(String(c.getValue() ?? '0')) },
-  { accessorKey: 'credit', header: 'دائن', cell: (c) => formatCurrency(String(c.getValue() ?? '0')) },
-  {
-    accessorKey: 'running_balance',
-    header: 'الرصيد الجاري',
-    cell: (c) => formatCurrency(String(c.getValue() ?? '0')),
-  },
-];
+import { StatementTable } from '../../../../../components/statement/statement-table.js';
 
 /** Student statement page (US5, T098). RTL, running balance + total owed. */
 export default async function StatementPage({ params }: { params: { studentId: string } }) {
@@ -65,7 +39,7 @@ export default async function StatementPage({ params }: { params: { studentId: s
         </CardContent>
       </Card>
 
-      <DataTable columns={columns} data={entries} emptyMessage="لا توجد حركات على هذا الطالب" />
+      <StatementTable data={entries} />
     </div>
   );
 }

@@ -24,7 +24,7 @@ export default async function ReceiptPage({ params }: { params: { eventId: strin
   const { data: event } = await supabase
     .from('money_event')
     .select(
-      'id, amount, occurred_at, receipt_no, student_id, account_id, student:student(name), account:account(name)',
+      'id, amount, occurred_at, receipt_no, student_id, account_id, student:student(name), account:account!money_event_account_id_fkey(name)',
     )
     .eq('id', params.eventId)
     .single<EventRow>();

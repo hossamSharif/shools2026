@@ -17,6 +17,7 @@ coverage/
 playwright-report/
 test-results/
 .playwright/
+packages/web/tests/.auth/
 
 # Env & secrets
 .env
