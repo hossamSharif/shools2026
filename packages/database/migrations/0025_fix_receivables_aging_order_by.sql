@@ -1,10 +1,9 @@
 -- ============================================================================
--- receivables_aging (US5, T097)
--- Unpaid students bucketed by days overdue (current / 1-30 / 31-60 / 61-90 /
--- 90+), evaluated "today" in Africa/Khartoum (Article VIII). Filterable by
--- stage/grade/section. Withdrawn/graduated students with an outstanding
--- balance still appear (Edge case) — NOT filtered by student.status.
--- Fully DERIVED (Article II) over installment + payment_allocation + discount.
+-- Fix receivables_aging (US5, T097) — Gauntlet-discovered bug
+-- The ORDER BY referenced `a.total_owed`, but `total_owed` is only computed
+-- in the final select list, not a column of the `agg` CTE aliased `a`. This
+-- raised "column a.total_owed does not exist" for every call. Postgres
+-- allows ordering by the output-column alias directly — fixed below.
 -- MONEY-ADJACENT (reads money data) ⇒ OWNER REVIEW (Article XII).
 -- ============================================================================
 

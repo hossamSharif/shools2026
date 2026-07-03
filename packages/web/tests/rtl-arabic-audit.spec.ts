@@ -67,6 +67,10 @@ test.describe('T138 — RTL/Arabic + SDG audit (SC-013)', () => {
   test('receivables report renders RTL Arabic aging buckets', async ({ page }) => {
     await page.goto('/reports/receivables');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-    await expect(page.getByText(/متأخر|مستحق/).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'تقرير أعمار الديون' })).toBeVisible();
+    // Aging-bucket labels rendered by receivables_aging (current / 1-30 / 31-60 / 61-90 / 90+).
+    await expect(page.getByText('الحالي').first()).toBeVisible();
+    await expect(page.getByText('أكثر من ٩٠').first()).toBeVisible();
+    await expect(page.getByText(/ج\.س/).first()).toBeVisible();
   });
 });

@@ -3,6 +3,44 @@
 Run date: 2026-07-03 (follow-up session). Supabase project: `schools`
 (`euumbaotyarjtcvwamax`, ACTIVE_HEALTHY, eu-central-1, Postgres 17).
 
+## 2026-07-04 second follow-up: `receivables_aging` DB bug fixed (owner-reviewed)
+
+The one money-touching gap flagged below — bug #5 in "Bugs found & fixed" — has now been
+fixed and re-verified live:
+
+- **Root cause**: `receivables_aging()`'s final `order by` referenced `a.total_owed`
+  (`a` = the `agg` CTE), but `total_owed` is only computed as an output-column alias in the
+  outer `select`, not a column of `agg` — Postgres raised `column a.total_owed does not exist`
+  on every call. **Fix**: `order by total_owed desc, s.name` (ordering by the select-list
+  alias directly, which Postgres supports). No behavioral/schema change — purely a query-plan
+  fix, same output columns, same filtering/bucketing logic.
+- Applied live via Supabase MCP `apply_migration` as a new forward-only migration,
+  `packages/database/migrations/0025_fix_receivables_aging_order_by.sql` (the already-applied
+  `0022_receivables_aging_function.sql` was left untouched, per Article XII forward-only
+  migration discipline — historical migration files are not edited after being applied).
+  `packages/database/functions/receivables_aging.sql` (the source-of-truth copy) updated to match.
+- **Re-verified, real evidence**:
+  - `pnpm --filter @erp/database test src/functions/receivables.test.ts` — **3/3 passed live**
+    (bucket boundaries at 0/30/60/90, withdrawn/graduated student still appears, grade filter +
+    zero-balance exclusion). Previously 2 failures on this exact bug.
+  - `rtl-arabic-audit.spec.ts` (T138) — **4/4 passed live** (was 3/4). The receivables report
+    now renders real bucketed data (`الحالي`, `١-٣٠`, `٣١-٦٠`, `٦١-٩٠`, `أكثر من ٩٠`, `الإجمالي`)
+    instead of 500ing.
+  - Along the way, the test's own assertion was also fixed: it originally searched for text
+    `/متأخر|مستحق/` ("overdue"/"due"), which never appears literally on the page — the real
+    labels are the bucket names above. Replaced with an assertion on the actual heading
+    (`تقرير أعمار الديون`) + bucket labels (`.first()`, since "الحالي" appears in both a
+    summary tile and a table column header) + SDG currency text. This is a test-authoring fix,
+    not a product bug.
+- `us5-receivables.spec.ts` (T094, full filter/export E2E) remains an unwritten `test.skip`
+  skeleton — a separate, larger scope item (not the DB bug), unchanged by this session.
+
+This closes the last DB-level bug from the previous session. G1/G2/G3(minus us7/us8)/G4/G5 are
+now all green for every implemented, spec'd path; the only remaining gaps are the two
+not-yet-written E2E specs (`us7-reminders`, `us8-lifecycle`) and two unrelated, separately
+tracked pre-existing bugs (`subscription_state()` boundary, `reverse_event` schema-cache lookup)
+neither of which block any Definition-of-Done item below.
+
 ## 2026-07-04 follow-up: G2 real parallel test + G3 real Playwright UI specs
 
 A further session closed the two gaps flagged as "environment limitation" /
@@ -268,28 +306,29 @@ prior session, 100 credits topped up for School A).
 |---|---|---|
 | G1 — Reconciliation | **PASS** | Live SQL, 3 levels, zero drift (tables above) |
 | G2 — Receipt concurrency | **PASS** | Real 8-way `Promise.all` Vitest suite passed live against Supabase (2/2 tests); gapless 1..8, no reuse, rollback burns no number |
-| G3 — Money-critical E2E | **17/18 PASS** | `us1`, `security-tenant-isolation` (8/8, unchanged), `us3-fee-payment` (1/1), `us4-money-events` (5/5), `rtl-arabic-audit` (3/4) all passed live; receivables blocked by a real DB bug (`receivables_aging`); `us7`/`us8` remain unwritten skeletons |
-| G4 — RTL/Arabic | **3/4 PASS (live)** | dashboard/receipt/statement pass live; receivables blocked by the same DB bug as G3 |
+| G3 — Money-critical E2E | **21/22 PASS** | `us1`, `security-tenant-isolation` (8/8), `us3-fee-payment` (1/1), `us4-money-events` (5/5), `rtl-arabic-audit` (4/4, receivables now fixed) all passed live; `us7`/`us8` remain unwritten skeletons (the only non-pass) |
+| G4 — RTL/Arabic | **4/4 PASS (live)** | dashboard/receipt/statement/receivables all pass live — `receivables_aging` DB bug fixed |
 | G5 — Tenant isolation | **PASS** | Live SQL impersonation + live Playwright, 8/8 tests passing |
 | G6 — SMS credit integrity | **Unit-verified + `topup_sms_credit` integration-verified** | `dispatch-credit-integrity` 2/2, `topup_sms_credit` 4/4 live; no `consume_sms_credit` integration test exists to run |
 
 ## Honest remaining gaps
 
-1. **`receivables_aging` DB function bug**: `column a.total_owed does not exist` — confirmed via
-   both a live Playwright run and the pre-existing `receivables.test.ts` Vitest failure. Blocks
-   the receivables report page (G3/G4) and its 2 Vitest tests. Money-touching DB function change
-   — gated for owner review (Article XII), not fixed in this session.
-2. **`subscription_state()` boundary bug**: `write_gating.test.ts` shows the function returns
+1. **`subscription_state()` boundary bug**: `write_gating.test.ts` shows the function returns
    `grace`/`locked` one day too early at the exact `period_end`/`period_end + grace_days`
    boundary. Pre-existing, found via the now-unblocked full Vitest run; not investigated further
-   this session (out of scope — G2 was the target, not write-gating).
-3. **`reverse_event` RPC not found**: `write_gating_enforcement.test.ts` reports
+   (out of scope for the receivables-bug fix session — a separate, unrelated function).
+2. **`reverse_event` RPC not found**: `write_gating_enforcement.test.ts` reports
    `Could not find the function public.reverse_event(...)` in the schema cache — either the
    function or its PostgREST grant may be missing on this instance. Not investigated further.
-4. **`us7-reminders.spec.ts` / `us8-lifecycle.spec.ts`**: still `test.skip` skeletons — time-boxed
-   out of this session. Their underlying RPCs were independently verified via SQL in earlier
-   sessions; the UI flows (reminder toggles, SMS log, lifecycle banner + nav-hiding) remain
-   unwritten.
+3. **`us7-reminders.spec.ts` / `us8-lifecycle.spec.ts`**: still `test.skip` skeletons. Their
+   underlying RPCs were independently verified via SQL in earlier sessions; the UI flows
+   (reminder toggles, SMS log, lifecycle banner + nav-hiding) remain unwritten.
+4. **`us5-receivables.spec.ts`** (full filter/grade/export E2E, T094): still a `test.skip`
+   skeleton — the underlying DB function and its rendering are now both verified (see above),
+   but the dedicated filter-interaction/CSV-export E2E spec itself hasn't been written.
+
+The `receivables_aging` DB bug that was the prior session's single blocking item is now fixed,
+migrated forward (0025), and re-verified with live evidence — it is no longer a gap.
 
 ## Definition of done (Article IV/X) — current status
 
@@ -301,18 +340,20 @@ concurrency + relevant G3 E2E, all green on a real Supabase instance."
 - **Other money events** (US4 — expense/transfer/refund/adjustment/discount): G1 PASS, G3 PASS
   (`us4-money-events.spec.ts` 5/5 live; `reverse_event` not covered by any spec) → **done**
   except reversal, which is SQL-verified but has no E2E coverage.
-- **Receivables aging** (US5): blocked — `receivables_aging` DB function bug (`column
-  a.total_owed does not exist`) fails both its own Vitest suite and the live Playwright
-  page — **not done**, needs an owner-reviewed migration fix.
+- **Receivables aging** (US5): `receivables_aging` DB bug fixed (migration 0025) and
+  re-verified — G1-equivalent Vitest suite 3/3 live, G4 Playwright 4/4 live. The dedicated
+  filter/export E2E spec (`us5-receivables.spec.ts`) is still unwritten → **derivation/rendering
+  done; full E2E coverage not done**.
 - **Reminders/SMS** (US7) and **lifecycle enforcement** (US8): backend RPCs SQL-verified, no
   E2E — **not done** per the strict G3 requirement.
 - **Tenant isolation** (G5) and **reconciliation** (G1): PASS across the board, unaffected by
   the above.
 
-Overall: the core fee-payment money path (the primary target of Article X's Gauntlet) is now
-fully green end-to-end on the live instance. Two known gaps remain outside this session's
-scope: the `receivables_aging` DB bug (schema change, owner-review gated) and the unwritten
-US7/US8 E2E specs.
+Overall: the core fee-payment money path (the primary target of Article X's Gauntlet) is fully
+green end-to-end on the live instance, and so is every other implemented money feature except
+for two purely test-authoring gaps: the unwritten `us5-receivables`, `us7-reminders`, and
+`us8-lifecycle` E2E specs (all three have their backend logic independently verified via SQL/
+Vitest; only their UI-driven E2E coverage remains to be written).
 
 ## Previous run's findings (superseded above, kept for history)
 
