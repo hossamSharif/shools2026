@@ -106,6 +106,12 @@ dispatchManualRouter.post('/internal/dispatch/manual', requireInternalToken, asy
 
   if (consumeErr) {
     if (consumeErr.message?.includes('INSUFFICIENT_CREDIT')) {
+      // Roll back the just-inserted log row — no credit was consumed and no
+      // SMS was sent, so no log entry should remain (it would otherwise be
+      // stuck at 'queued' forever with no corresponding consumption).
+      if (!existing) {
+        await supabase.from('sms_message_log').delete().eq('id', smsMessageId);
+      }
       return res.status(409).json({ error: 'INSUFFICIENT_CREDIT' });
     }
     return res.status(500).json({ error: 'INTERNAL_ERROR' });

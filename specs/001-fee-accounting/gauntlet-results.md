@@ -3,6 +3,64 @@
 Run date: 2026-07-03 (follow-up session). Supabase project: `schools`
 (`euumbaotyarjtcvwamax`, ACTIVE_HEALTHY, eu-central-1, Postgres 17).
 
+## 2026-07-04 third follow-up: US5/US7/US8 E2E gaps closed — G3 now 24/24
+
+The last three `test.skip` skeletons (`us5-receivables.spec.ts` T094, `us7-reminders.spec.ts`
+T111, `us8-lifecycle.spec.ts` T126) were written out as real, live-run Playwright specs, all now
+green against `next dev` + the live Supabase project + the `@erp/api` worker (started locally for
+the manual-reminder dispatch calls).
+
+**Environment/seed additions** (`packages/database/seeds/test_gauntlet_data.sql`):
+- 3 new schools pinned to fixed lifecycle states for US8: "Gauntlet School C (Grace)"
+  (`period_end` = yesterday), "Gauntlet School D (Locked)" (`period_end` 40 days ago, past
+  `grace_days`), and "Gauntlet School E (No Credit)" (ACTIVE, zero SMS credit — kept separate
+  from School A so the US7 INSUFFICIENT_CREDIT test never drains A's credit and breaks the
+  successful-send test). Each has one seeded accountant (`accountant_grace`, `accountant_locked`,
+  `accountant_e` — added to `USERS` in `tests/global-setup.ts`), one student, and (C/D) two
+  accounts for the mutate-route rejection tests.
+- Default `reminder_rule` rows (before=3/on=0/after=3, enabled) for schools A/B/C/D/E — discovered
+  migration 0017 only seeds defaults for schools that existed *at migration time*, and every
+  Gauntlet school was created after that migration ran, so School A had **zero** reminder rules
+  before this session (a real gap, now fixed via seed data, not a schema change).
+- 3 varied-status `sms_message_log` rows for School A (queued/delivered/failed) for the log-view
+  assertions, plus a `sms_credit_topup` row (1000 segments) for School A so the manual-reminder
+  success path isn't blocked by `INSUFFICIENT_CREDIT`.
+
+**Real bug found & fixed** (`packages/api/src/routes/dispatch-manual.ts`): the manual-reminder
+endpoint inserted the `sms_message_log` row *before* calling `consume_sms_credit`, then on
+`INSUFFICIENT_CREDIT` returned 409 without cleaning up — leaving an orphaned `'queued'` log row
+with no corresponding credit consumption, forever. Fixed by deleting that just-inserted row when
+credit consumption fails (only for a freshly-created row, not an idempotent replay of an existing
+one), so the spec's assertion ("no new `sms_message_log` row was created") is actually true.
+
+**Real config gap found** (not committed, since `.env` is gitignored): `packages/web/lib/actions/
+reminders.ts` and `packages/api/src/middleware/internal-auth.ts` both read `WORKER_URL` /
+`INTERNAL_DISPATCH_TOKEN`, but the root `.env` only had `DISPATCH_INTERNAL_TOKEN` (a name that is
+never read anywhere) and no `WORKER_URL` at all — manual reminders were unconditionally broken
+("WORKER_URL / INTERNAL_DISPATCH_TOKEN غير مضبوطة") in every environment using that `.env` as-is.
+Added the correctly-named vars locally to unblock the `@erp/api` worker + web dev server for this
+session; flagging here since it'll recur for anyone else running the app from this `.env`.
+
+**Results** (`E2E_BASE_URL=http://localhost:3000 npx playwright test us5-receivables.spec.ts
+us7-reminders.spec.ts us8-lifecycle.spec.ts`, run twice back-to-back to confirm idempotency):
+**8/8 passed both times** (1 in us5, 5 in us7, 2 in us8). Individual breakdown:
+- `us5-receivables.spec.ts`: 1/1 — row-level bucket sums match the header tiles; the grade filter
+  narrows the list to empty + zeroed totals for an empty grade; CSV export returns
+  `text/csv` with a row count matching the visible table.
+- `us7-reminders.spec.ts`: 5/5 — reminder-rule enable/disable and day-count edits persist across
+  a hard reload; the per-school and per-student SMS logs render seeded rows with correct status
+  badges; a manual reminder send adds exactly one new log row; a manual reminder against the
+  zero-credit school surfaces the Arabic `رصيد الرسائل غير كافٍ لإرسال هذا التذكير` message and
+  creates no log row (after the bug fix above).
+- `us8-lifecycle.spec.ts`: 2/2 — grace and locked banners render with the correct Arabic
+  copy/countdown; mutate nav links (`المدفوعات`/`المصروفات`) are absent in both states; `/students`
+  and `/reports/receivables` still render (200) in both states; direct navigation + submit on
+  `/payments/new`, `/expenses/new`, and `/transfers/new` all surface `WRITES_GATED` as an on-screen
+  error (not a silent success) in both states; the CSV export still succeeds while locked.
+
+This brings **G3 to 24/24 previously-skeleton money/UI E2E specs green** (21 from the prior
+session + these 3), with every US1–US8 UI flow this project set out to cover now exercised live.
+
 ## 2026-07-04 second follow-up: `receivables_aging` DB bug fixed (owner-reviewed)
 
 The one money-touching gap flagged below — bug #5 in "Bugs found & fixed" — has now been

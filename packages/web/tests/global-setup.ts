@@ -40,6 +40,9 @@ export const USERS = {
   accountant_a: { email: 'accountant.a@gauntlet.test', password: 'password123' },
   viewer_a: { email: 'viewer.a@gauntlet.test', password: 'password123' },
   school_admin_b: { email: 'admin.b@gauntlet.test', password: 'password123' },
+  accountant_grace: { email: 'accountant.grace@gauntlet.test', password: 'password123' },
+  accountant_locked: { email: 'accountant.locked@gauntlet.test', password: 'password123' },
+  accountant_e: { email: 'accountant.e@gauntlet.test', password: 'password123' },
 } as const;
 
 function b64urlEncode(input: string): string {
