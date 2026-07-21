@@ -38,3 +38,6 @@ Thumbs.db
 
 # Local install logs
 install*.log
+
+# Local Supabase credentials — never commit
+docs/supabaseEnv.md
