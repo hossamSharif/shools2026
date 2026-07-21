@@ -764,16 +764,19 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          logo_path: string | null
           name: string
         }
         Insert: {
           created_at?: string
           id?: string
+          logo_path?: string | null
           name: string
         }
         Update: {
           created_at?: string
           id?: string
+          logo_path?: string | null
           name?: string
         }
         Relationships: []
@@ -1259,6 +1262,10 @@ export type Database = {
           p_school_id: string
         }
         Returns: Json
+      }
+      update_own_display_name: {
+        Args: { p_display_name: string }
+        Returns: undefined
       }
     }
     Enums: {

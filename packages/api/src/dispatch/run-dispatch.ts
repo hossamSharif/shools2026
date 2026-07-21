@@ -178,7 +178,7 @@ export async function runDispatchForSchool(
 }
 
 export function buildReminderMessage(c: InstallmentCandidate & { school_name?: string }): string {
-  const amount = c.outstanding.toLocaleString('ar-SD', { maximumFractionDigits: 2 });
+  const amount = c.outstanding.toLocaleString('en-US', { maximumFractionDigits: 2 });
   const date = c.due_date;
   return `تذكير: الطالب ${c.student_name} - ${c.grade_label}. قسط مستحق ${amount} ج.س بتاريخ ${date}. ${c.school_name ?? ''}`.trim();
 }

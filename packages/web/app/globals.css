@@ -9,3 +9,49 @@
 html {
   font-family: var(--font-arabic);
 }
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+/* App is RTL-only (Article IX) — "start" is always the right edge, so the
+   sheet always slides in from the right; no LTR case to branch on. */
+@keyframes slide-in-from-start {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes slide-out-to-start {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.animate-in {
+  animation-duration: 200ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+.animate-out {
+  animation-duration: 150ms;
+  animation-timing-function: ease-in;
+  animation-fill-mode: both;
+}
+.data-\[state\=open\]\:fade-in[data-state='open'] {
+  animation-name: fade-in;
+}
+.data-\[state\=closed\]\:fade-out[data-state='closed'] {
+  animation-name: fade-out;
+}
+.data-\[state\=open\]\:slide-in-from-start[data-state='open'] {
+  animation-name: slide-in-from-start;
+}
+.data-\[state\=closed\]\:slide-out-to-start[data-state='closed'] {
+  animation-name: slide-out-to-start;
+}

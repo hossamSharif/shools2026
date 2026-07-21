@@ -1,0 +1,79 @@
+- generic [active] [ref=f10e1]:
+  - alert [ref=f10e10]
+  - generic [ref=f10e11]:
+    - status [ref=f10e12]: الاشتراك نشط(324 يوم متبقي)
+    - banner [ref=f10e13]:
+      - generic [ref=f10e14]: نظام محاسبة الرسوم المدرسية
+      - generic [ref=f10e15]:
+        - button "الإشعارات" [ref=f10e17] [cursor=pointer]:
+          - text: 🔔
+          - generic [ref=f10e18]: "20"
+        - generic [ref=f10e19]: School A Accountant
+    - generic [ref=f10e20]:
+      - navigation [ref=f10e21]:
+        - list [ref=f10e22]:
+          - listitem [ref=f10e23]:
+            - link "لوحة التحكم" [ref=f10e24] [cursor=pointer]:
+              - /url: /dashboard
+          - listitem [ref=f10e25]:
+            - link "الطلاب" [ref=f10e26] [cursor=pointer]:
+              - /url: /students
+          - listitem [ref=f10e27]:
+            - link "المدفوعات" [ref=f10e28] [cursor=pointer]:
+              - /url: /payments/new
+          - listitem [ref=f10e29]:
+            - link "المصروفات" [ref=f10e30] [cursor=pointer]:
+              - /url: /expenses/new
+          - listitem [ref=f10e31]:
+            - link "التقارير" [ref=f10e32] [cursor=pointer]:
+              - /url: /reports/receivables
+          - listitem [ref=f10e33]:
+            - link "الرسائل" [ref=f10e34] [cursor=pointer]:
+              - /url: /sms
+          - listitem [ref=f10e35]:
+            - link "الإشعارات" [ref=f10e36] [cursor=pointer]:
+              - /url: /notifications
+      - main [ref=f10e37]:
+        - generic [ref=f10e38]:
+          - heading "لوحة التحكم" [level=1] [ref=f10e39]
+          - generic [ref=f10e40]:
+            - heading "الحسابات" [level=2] [ref=f10e41]
+            - generic [ref=f10e42]:
+              - generic [ref=f10e44]:
+                - paragraph [ref=f10e45]: الخزينة الرئيسية
+                - paragraph [ref=f10e46]: ٤٥٬٦٠٥٫٠٠ ج.س
+              - generic [ref=f10e48]:
+                - paragraph [ref=f10e49]: حساب بنكي - بنك الخرطوم
+                - paragraph [ref=f10e50]: ٢٠٧٬٧٨٦٫٦٧ ج.س
+              - generic [ref=f10e52]:
+                - paragraph [ref=f10e53]: إجمالي الأرصدة
+                - paragraph [ref=f10e54]: ٢٥٣٬٣٩١٫٦٧ ج.س
+          - generic [ref=f10e55]:
+            - heading "المؤشرات المالية" [level=2] [ref=f10e56]
+            - generic [ref=f10e57]:
+              - generic [ref=f10e59]:
+                - paragraph [ref=f10e60]: المحصّل هذا الشهر
+                - paragraph [ref=f10e61]: ٥٬٧٣١٫٦٧ ج.س
+              - generic [ref=f10e63]:
+                - paragraph [ref=f10e64]: المحصّل هذا العام
+                - paragraph [ref=f10e65]: ٥٬٧٣١٫٦٧ ج.س
+              - generic [ref=f10e67]:
+                - paragraph [ref=f10e68]: المستحقات المتبقية
+                - paragraph [ref=f10e69]: ١٠٨٬٢٦٨٫٣٣ ج.س
+              - generic [ref=f10e71]:
+                - paragraph [ref=f10e72]: نسبة التحصيل
+                - paragraph [ref=f10e73]: 0%
+              - generic [ref=f10e75]:
+                - paragraph [ref=f10e76]: المصروفات هذا الشهر
+                - paragraph [ref=f10e77]: ١٬٧٧٥٫٠٠ ج.س
+              - generic [ref=f10e79]:
+                - paragraph [ref=f10e80]: صافي التدفق النقدي
+                - paragraph [ref=f10e81]: ٣٬٩٥٦٫٦٧ ج.س
+              - generic [ref=f10e83]:
+                - paragraph [ref=f10e84]: عدد الطلاب المتأخرين
+                - paragraph [ref=f10e85]: "11"
+          - generic [ref=f10e86]:
+            - heading "الرسائل النصية" [level=2] [ref=f10e87]
+            - generic [ref=f10e90]:
+              - paragraph [ref=f10e91]: رصيد الرسائل النصية
+              - paragraph [ref=f10e92]: 1,089

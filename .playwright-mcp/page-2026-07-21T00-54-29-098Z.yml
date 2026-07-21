@@ -1,0 +1,13 @@
+- generic [active] [ref=f3e1]:
+  - main [ref=f3e2]:
+    - heading "تعيين كلمة مرور جديدة" [level=1] [ref=f3e3]
+    - generic [ref=f3e4]:
+      - generic [ref=f3e5]:
+        - text: كلمة المرور الجديدة
+        - textbox "كلمة المرور الجديدة" [ref=f3e6]: resetpass789
+      - generic [ref=f3e7]:
+        - text: تأكيد كلمة المرور الجديدة
+        - textbox "تأكيد كلمة المرور الجديدة" [ref=f3e8]: resetpass789
+      - paragraph [ref=f3e11]: تم تعيين كلمة المرور. جارٍ التحويل…
+      - button "جارٍ الحفظ…" [disabled]
+  - alert [ref=f3e10]

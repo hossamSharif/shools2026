@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
 import { FeeStructureBuilder } from '../../../../components/settings/fee-structure-builder.js';
+import { SettingsNav } from '../../../../components/settings/settings-nav.js';
 
 interface GradeRow {
   id: string;
@@ -30,6 +31,7 @@ export default async function FeesPage() {
   return (
     <div dir="rtl" className="space-y-4">
       <h1 className="text-2xl font-bold">هيكل الرسوم</h1>
+      <SettingsNav current="/settings/fees" />
       <FeeStructureBuilder
         grades={(grades ?? []).map((g) => ({ id: g.id, label: g.label_ar }))}
         years={years ?? []}

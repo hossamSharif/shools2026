@@ -8,11 +8,9 @@ import path from 'node:path';
  * seeded accountant's storageState (see tests/global-setup.ts) — the app has
  * no /login UI to drive interactively.
  *
- * `reverse_event` (the entry-reversal flow) is exposed by
- * components/money/reverse-event-button.tsx but is not reachable from any
- * page in this session's time budget without risking a fabricated selector —
- * left uncovered here; the RPC itself was independently verified via direct
- * SQL/RPC in gauntlet-results.md (G1 evidence).
+ * `reverse_event` (entry-reversal, SC-005): components/money/reverse-event-button.tsx
+ * existed but was never mounted on any page — wired into the payment receipt
+ * page here so it's reachable, then driven end to end below.
  */
 test.use({ storageState: path.resolve(__dirname, '.auth/accountant_a.json') });
 
@@ -62,7 +60,11 @@ test.describe('US4 — money events', () => {
     // first active student from the /students list.
     await page.goto('/students');
     await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
-    const firstStudentLink = page.locator('a[href*="/students/"]').first();
+    // The students list renders both a `md:hidden` mobile card link and a
+    // `hidden md:block` DataTable link to the same href; only one is visible
+    // at a given viewport, so filter to the visible one rather than relying
+    // on DOM order.
+    const firstStudentLink = page.locator('a[href*="/students/"]:visible').first();
     await firstStudentLink.waitFor();
     const href = await firstStudentLink.getAttribute('href');
     const studentId = href?.match(/\/students\/([^/]+)/)?.[1];
@@ -73,5 +75,31 @@ test.describe('US4 — money events', () => {
     await page.getByPlaceholder('0').fill('5');
     await page.getByRole('button', { name: 'تطبيق الخصم' }).click();
     await expect(page.getByText('تم تطبيق الخصم')).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('reverse a posted payment: original stays visible, a reversal posts (SC-005)', async ({
+    page,
+  }) => {
+    await page.goto('/payments/new');
+    await page.locator('select').first().selectOption({ index: 1 }); // student
+    await page.getByText('الحساب', { exact: true }).waitFor();
+    await page.locator('select').nth(1).selectOption({ index: 1 }); // account
+    await page.getByPlaceholder('0.00').fill('15');
+    await page.getByRole('button', { name: 'تسجيل الدفعة' }).click();
+    await expect(page.getByText(/تم التسجيل — رقم الإيصال \d+/)).toBeVisible({ timeout: 10_000 });
+
+    // Navigate directly via the link's href — clicking through races with the
+    // payment form's own router.refresh() and can drop the navigation.
+    const receiptHref = await page.getByRole('link', { name: 'عرض الإيصال' }).getAttribute('href');
+    await page.goto(receiptHref!);
+    await expect(page.getByRole('heading', { name: 'إيصال دفع' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'عكس' }).click();
+    await page.getByPlaceholder('سبب العكس').fill('اختبار عكس العملية');
+    await page.getByRole('button', { name: 'تأكيد العكس' }).click();
+    // On success the dialog closes (on error it stays open showing the message).
+    await expect(page.getByRole('heading', { name: 'عكس العملية' })).not.toBeVisible({
+      timeout: 10_000,
+    });
   });
 });

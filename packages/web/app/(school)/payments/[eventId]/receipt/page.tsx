@@ -4,6 +4,7 @@ import { formatDateTime } from '../../../../../lib/format/date.js';
 import { formatCurrency } from '../../../../../lib/format/currency.js';
 import { studentBalance } from '../../../../../lib/queries/balances.js';
 import { ReceiptViewer } from '../../../../../components/payments/receipt-viewer.js';
+import { ReverseEventButton } from '../../../../../components/money/reverse-event-button.js';
 import type { ReceiptData } from '../../../../../pdf/receipt.js';
 
 interface EventRow {
@@ -63,6 +64,7 @@ export default async function ReceiptPage({ params }: { params: { eventId: strin
     <div dir="rtl" className="space-y-4">
       <h1 className="text-2xl font-bold">إيصال دفع</h1>
       <ReceiptViewer data={data} />
+      <ReverseEventButton eventId={event.id} />
     </div>
   );
 }

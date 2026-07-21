@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Bell } from 'lucide-react';
 import { createSupabaseBrowserClient } from '../../lib/supabase/client.js';
 
 interface NotificationRow {
@@ -60,7 +61,7 @@ export function NotificationBell() {
         onClick={() => setOpen((v) => !v)}
         className="relative rounded-full p-2 text-gray-600 hover:bg-gray-100"
       >
-        🔔
+        <Bell className="h-5 w-5" aria-hidden />
         {unreadCount > 0 && (
           <span
             data-testid="notification-unread-count"
@@ -102,7 +103,7 @@ export function NotificationBell() {
               >
                 <div className="font-medium">{LABELS[n.type]}</div>
                 <div className="text-xs text-gray-500">
-                  {new Date(n.created_at).toLocaleString('ar-SD')}
+                  {new Date(n.created_at).toLocaleString('en-US')}
                 </div>
               </li>
             ))}

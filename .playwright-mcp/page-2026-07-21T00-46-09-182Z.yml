@@ -1,0 +1,12 @@
+- generic [active] [ref=f1e1]:
+  - alert [ref=f1e126]
+  - main [ref=f1e174]:
+    - heading "نظام محاسبة الرسوم المدرسية" [level=1] [ref=f1e175]
+    - generic [ref=f1e176]:
+      - generic [ref=f1e177]:
+        - text: البريد الإلكتروني
+        - textbox "البريد الإلكتروني" [ref=f1e178]
+      - generic [ref=f1e179]:
+        - text: كلمة المرور
+        - textbox "كلمة المرور" [ref=f1e180]
+      - button "تسجيل الدخول" [ref=f1e181] [cursor=pointer]

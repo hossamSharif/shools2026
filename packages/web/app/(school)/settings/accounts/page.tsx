@@ -2,6 +2,8 @@ import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
 import { accountBalance } from '../../../../lib/queries/balances.js';
 import { formatCurrency } from '../../../../lib/format/currency.js';
 import { AccountForm } from '../../../../components/settings/account-form.js';
+import { AccountsTable } from '../../../../components/settings/accounts-table.js';
+import { SettingsNav } from '../../../../components/settings/settings-nav.js';
 
 interface AccountRow {
   id: string;
@@ -22,45 +24,23 @@ export default async function AccountsPage() {
 
   const accounts = data ?? [];
   const balances = await Promise.all(accounts.map((a) => accountBalance(a.id)));
+  const rows = accounts.map((a, i) => ({
+    id: a.id,
+    name: a.name,
+    typeLabel: a.type === 'cash' ? 'نقدي' : 'بنكي',
+    account_number: a.account_number,
+    openingBalance: formatCurrency(a.opening_balance),
+    currentBalance: formatCurrency(balances[i] ?? '0'),
+  }));
 
   return (
     <div dir="rtl" className="space-y-6">
       <h1 className="text-2xl font-bold">الحسابات</h1>
+      <SettingsNav current="/settings/accounts" />
 
       <AccountForm />
 
-      <div className="overflow-hidden rounded-lg border bg-white">
-        <table dir="rtl" className="w-full text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-2 text-start font-semibold">الاسم</th>
-              <th className="px-4 py-2 text-start font-semibold">النوع</th>
-              <th className="px-4 py-2 text-start font-semibold">رقم الحساب</th>
-              <th className="px-4 py-2 text-start font-semibold">الرصيد الافتتاحي</th>
-              <th className="px-4 py-2 text-start font-semibold">الرصيد الحالي</th>
-            </tr>
-          </thead>
-          <tbody>
-            {accounts.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
-                  لا توجد حسابات بعد
-                </td>
-              </tr>
-            ) : (
-              accounts.map((a, i) => (
-                <tr key={a.id} className="border-t border-gray-100">
-                  <td className="px-4 py-2">{a.name}</td>
-                  <td className="px-4 py-2">{a.type === 'cash' ? 'نقدي' : 'بنكي'}</td>
-                  <td className="px-4 py-2">{a.account_number ?? '—'}</td>
-                  <td className="px-4 py-2">{formatCurrency(a.opening_balance)}</td>
-                  <td className="px-4 py-2">{formatCurrency(balances[i] ?? '0')}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <AccountsTable data={rows} />
     </div>
   );
 }

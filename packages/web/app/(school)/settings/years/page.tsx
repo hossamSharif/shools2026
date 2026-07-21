@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
 import { YearsManager } from '../../../../components/settings/years-manager.js';
+import { SettingsNav } from '../../../../components/settings/settings-nav.js';
 
 interface YearRow {
   id: string;
@@ -20,6 +21,7 @@ export default async function YearsPage() {
   return (
     <div dir="rtl" className="space-y-4">
       <h1 className="text-2xl font-bold">السنوات الدراسية</h1>
+      <SettingsNav current="/settings/years" />
       <YearsManager years={data ?? []} />
     </div>
   );

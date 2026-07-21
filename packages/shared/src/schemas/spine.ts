@@ -37,6 +37,11 @@ export type StudentInput = z.infer<typeof StudentInput>;
 export const AccountType = z.enum(['cash', 'bank']);
 export type AccountType = z.infer<typeof AccountType>;
 
+export const SchoolLogoInput = z.object({
+  logo_path: z.string().min(1).max(500),
+});
+export type SchoolLogoInput = z.infer<typeof SchoolLogoInput>;
+
 export const AccountInput = z
   .object({
     name: z.string().min(1, 'اسم الحساب مطلوب').max(100),

@@ -14,13 +14,20 @@ d('subscription_state (Africa/Khartoum boundaries)', () => {
   const supabase = getServiceClient()!;
   let schoolId: string;
 
-  // Build an ISO date N days from "today in Khartoum".
+  // Build an ISO date N days from "today in Khartoum". Formats directly in the
+  // Khartoum timezone (en-CA locale yields YYYY-MM-DD) rather than round-tripping
+  // through toISOString(), which converts back to UTC and rolls the date back
+  // near midnight in a UTC+2 zone.
+  const khartoumDateFormat = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Khartoum',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
   function khartoumDatePlus(days: number): string {
-    const nowKhartoum = new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'Africa/Khartoum' }),
-    );
-    nowKhartoum.setDate(nowKhartoum.getDate() + days);
-    return nowKhartoum.toISOString().slice(0, 10);
+    const shifted = new Date();
+    shifted.setUTCDate(shifted.getUTCDate() + days);
+    return khartoumDateFormat.format(shifted);
   }
 
   beforeAll(async () => {

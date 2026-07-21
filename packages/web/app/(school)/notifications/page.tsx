@@ -28,7 +28,7 @@ export default async function NotificationsPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">الإشعارات</h1>
+      <h1 className="text-2xl font-bold">الإشعارات</h1>
       <Card>
         <CardContent className="divide-y p-0">
           {items.length === 0 && <p className="p-4 text-center text-gray-400">لا توجد إشعارات</p>}
@@ -42,7 +42,7 @@ export default async function NotificationsPage() {
             >
               <div className="font-medium">{LABELS[n.type]}</div>
               <div className="text-xs text-gray-500">
-                {new Date(n.created_at).toLocaleString('ar-SD')}
+                {new Date(n.created_at).toLocaleString('en-US')}
               </div>
               <pre className="mt-1 text-xs text-gray-400" dir="ltr">
                 {JSON.stringify(n.payload)}

@@ -38,11 +38,11 @@ export default async function ReceivablesPage({
 
   return (
     <div dir="rtl" className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">تقرير أعمار الديون</h1>
         <a
           href={`/reports/receivables/export?${new URLSearchParams(searchParams as Record<string, string>).toString()}`}
-          className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+          className="rounded-md border px-3 py-2 text-center text-sm hover:bg-gray-50"
         >
           تصدير CSV
         </a>

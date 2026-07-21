@@ -2,8 +2,8 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { ar } from 'date-fns/locale';
 
 /**
- * Dates are stored UTC and rendered in Africa/Khartoum with Arabic locale
- * (Article VIII/IX). Pass a UTC ISO string or Date.
+ * Dates are stored UTC and rendered in Africa/Khartoum with Arabic locale for
+ * month/day names, but Western (Latin) digits. Pass a UTC ISO string or Date.
  */
 export const SCHOOL_TZ = 'Africa/Khartoum';
 

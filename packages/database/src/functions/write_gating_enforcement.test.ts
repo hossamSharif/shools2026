@@ -81,7 +81,7 @@ d('write-gating enforcement across money RPCs (SC-009)', () => {
       p_attachment_path: null,
     });
     if (error) throw error;
-    eventId = (data as unknown as { event_id: string }).event_id ?? (data as unknown as { id: string }).id;
+    eventId = (data as unknown as { money_event_id: string }).money_event_id;
   });
 
   const gatedCases: { name: string; call: () => Promise<{ error: unknown }> }[] = [

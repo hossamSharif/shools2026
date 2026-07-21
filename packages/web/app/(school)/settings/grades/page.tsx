@@ -1,5 +1,6 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
 import { GradeSections } from '../../../../components/settings/grade-sections.js';
+import { SettingsNav } from '../../../../components/settings/settings-nav.js';
 
 interface GradeRow {
   id: string;
@@ -36,6 +37,7 @@ export default async function GradesPage() {
   return (
     <div dir="rtl" className="space-y-4">
       <h1 className="text-2xl font-bold">الصفوف والشعب</h1>
+      <SettingsNav current="/settings/grades" />
       <div className="space-y-3">
         {(grades ?? []).map((g) => (
           <GradeSections key={g.id} grade={g} sections={byGrade.get(g.id) ?? []} />

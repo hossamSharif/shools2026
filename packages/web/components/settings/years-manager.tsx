@@ -5,7 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRouter } from 'next/navigation';
-import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@erp/ui';
+import type { ColumnDef } from '@tanstack/react-table';
+import { Button, Input, Card, CardHeader, CardTitle, CardContent, DataTable } from '@erp/ui';
 import { createAcademicYear, setCurrentYear } from '../../lib/actions/spine.js';
 
 const FormSchema = z.object({
@@ -49,6 +50,35 @@ export function YearsManager({ years }: { years: YearRow[] }) {
     });
   });
 
+  const columns: ColumnDef<YearRow, unknown>[] = [
+    { accessorKey: 'label', header: 'السنة' },
+    {
+      id: 'status',
+      header: 'الحالة',
+      cell: (c) =>
+        c.row.original.is_current ? (
+          <span className="text-emerald-600">حالية</span>
+        ) : (
+          <span className="text-gray-400">—</span>
+        ),
+    },
+    {
+      id: 'action',
+      header: '',
+      cell: (c) =>
+        c.row.original.is_current ? null : (
+          <button
+            type="button"
+            onClick={() => markCurrent(c.row.original.id)}
+            disabled={pending}
+            className="text-emerald-600 hover:underline disabled:opacity-50"
+          >
+            تعيين كحالية
+          </button>
+        ),
+    },
+  ];
+
   const markCurrent = (id: string) => {
     setServerError(null);
     startTransition(async () => {
@@ -88,53 +118,7 @@ export function YearsManager({ years }: { years: YearRow[] }) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-0">
-          <table dir="rtl" className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-start font-semibold">السنة</th>
-                <th className="px-4 py-2 text-start font-semibold">الحالة</th>
-                <th className="px-4 py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {years.length === 0 ? (
-                <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-gray-400">
-                    لا توجد سنوات دراسية بعد
-                  </td>
-                </tr>
-              ) : (
-                years.map((y) => (
-                  <tr key={y.id} className="border-t border-gray-100">
-                    <td className="px-4 py-2">{y.label}</td>
-                    <td className="px-4 py-2">
-                      {y.is_current ? (
-                        <span className="text-emerald-600">حالية</span>
-                      ) : (
-                        <span className="text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2 text-start">
-                      {y.is_current ? null : (
-                        <button
-                          type="button"
-                          onClick={() => markCurrent(y.id)}
-                          disabled={pending}
-                          className="text-emerald-600 hover:underline disabled:opacity-50"
-                        >
-                          تعيين كحالية
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      <DataTable columns={columns} data={years} emptyMessage="لا توجد سنوات دراسية بعد" />
     </div>
   );
 }

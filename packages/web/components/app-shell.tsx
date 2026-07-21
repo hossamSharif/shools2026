@@ -1,9 +1,13 @@
-import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import type { UserRole } from '../lib/auth/guard.js';
 import { LifecycleBanner } from './lifecycle-banner.js';
 import { getLifecycleInfo, writesAllowed } from '../lib/auth/lifecycle-gate.js';
 import { NotificationBell } from './notifications/bell.js';
+import { AccountMenu } from './account/account-menu.js';
+import { NavLinks } from './nav-links.js';
+import { MobileNav } from './mobile-nav.js';
+import { createSupabaseServerClient } from '../lib/supabase/server.js';
+import { schoolLogoUrl } from '../lib/storage/school-logo.js';
 
 interface NavItem {
   href: string;
@@ -49,34 +53,43 @@ export async function AppShell({
   const { state } = await getLifecycleInfo(schoolId);
   const allowMutate = writesAllowed(state);
 
-  const items = NAV.filter((i) => i.roles.includes(role) && (allowMutate || !i.mutate));
+  const items = NAV.filter((i) => i.roles.includes(role) && (allowMutate || !i.mutate)).map(
+    (i) => ({ href: i.href, label: t(`nav.${i.key}`), icon: i.key }),
+  );
+
+  let logoUrl: string | null = null;
+  if (schoolId) {
+    const supabase = createSupabaseServerClient();
+    const { data: school } = await supabase
+      .from('school')
+      .select('logo_path')
+      .eq('id', schoolId)
+      .maybeSingle<{ logo_path: string | null }>();
+    logoUrl = schoolLogoUrl(school?.logo_path ?? null);
+  }
 
   return (
-    <div dir="rtl" className="min-h-screen bg-gray-50">
+    <div dir="rtl" className="min-h-screen bg-muted">
       {schoolId && <LifecycleBanner schoolId={schoolId} />}
-      <header className="flex items-center justify-between border-b bg-white px-6 py-3">
-        <span className="text-lg font-bold">{t('title')}</span>
+      <header className="flex items-center justify-between border-b border-border bg-surface px-6 py-3">
+        <div className="flex items-center gap-2">
+          <MobileNav items={items} menuLabel={t('menu')} closeLabel={t('closeMenu')} />
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="" className="h-8 w-8 shrink-0 rounded object-contain" />
+          ) : null}
+          <span className="text-lg font-bold text-primary">{t('title')}</span>
+        </div>
         <div className="flex items-center gap-4">
           {schoolId && <NotificationBell />}
-          <span className="text-sm text-gray-500">{displayName}</span>
+          <AccountMenu displayName={displayName} />
         </div>
       </header>
       <div className="flex">
-        <nav className="w-56 shrink-0 border-e bg-white p-4">
-          <ul className="space-y-1">
-            {items.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className="block rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                >
-                  {t(`nav.${item.key}`)}
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <nav className="hidden w-56 shrink-0 border-e border-border bg-surface p-4 md:block">
+          <NavLinks items={items} />
         </nav>
-        <main className="flex-1 p-6">{children}</main>
+        <main className="min-w-0 flex-1 p-6">{children}</main>
       </div>
     </div>
   );

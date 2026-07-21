@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { renderToBuffer } from '@react-pdf/renderer';
+import type * as ReactPdf from '@react-pdf/renderer';
 import { notFound } from 'next/navigation';
 import { createSupabaseServerClient } from '../../../../../../lib/supabase/server.js';
 import { studentStatement, totalOwed } from '../../../../../../lib/queries/statement.js';
@@ -14,6 +14,9 @@ const TYPE_LABEL_AR: Record<string, string> = {
   adjustment: 'تسوية',
   refund: 'استرداد',
 };
+
+// See pdf/statement.tsx for why this is a runtime require, not a static import.
+const { renderToBuffer } = (eval('require') as NodeRequire)('@react-pdf/renderer') as typeof ReactPdf;
 
 /** Statement PDF export (US5, T099). RTL Arabic, SDG amounts. */
 export async function GET(_request: Request, { params }: { params: { studentId: string } }) {

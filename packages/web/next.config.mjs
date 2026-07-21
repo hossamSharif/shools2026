@@ -14,12 +14,16 @@ const withSerwist = withSerwistInit({
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // @react-pdf/renderer ships ESM-only; without transpiling it, any bundle
-  // that pulls it in (receipt/statement PDF viewers, the statement PDF route
-  // handler) fails to compile with "Module not found: ESM packages... need
-  // to be imported" — a real bug found while running the Gauntlet E2E specs
-  // (no route using it had ever been exercised through a running dev server
-  // before this session).
+  // @react-pdf/renderer ships ESM-only; the client-side receipt viewer
+  // (receipt-viewer.tsx, dynamic-imported with ssr:false) needs it transpiled
+  // or webpack fails with "Module not found: ESM packages... need to be
+  // imported" — a real bug found while running the Gauntlet E2E specs. Next
+  // forbids also listing it in experimental.serverComponentsExternalPackages
+  // (a "conflict" build error), so the statement PDF route handler's separate
+  // "a.Component is not a constructor" issue (its reconciler uses class
+  // components, which the "react-server" bundling condition strips) is worked
+  // around in that route itself via a genuine `require()` — see
+  // app/(school)/students/[studentId]/statement/pdf/route.ts.
   transpilePackages: ['@erp/shared', '@erp/database', '@erp/ui', '@react-pdf/renderer'],
   experimental: {
     // Server Actions are used for light CRUD (Article VI).

@@ -113,7 +113,7 @@ export function PaymentForm({
         {loadingInst ? (
           <p className="text-sm text-gray-400">جارٍ تحميل الأقساط…</p>
         ) : installments.length > 0 ? (
-          <div className="overflow-hidden rounded-md border">
+          <div className="overflow-x-auto rounded-md border">
             <table dir="rtl" className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>

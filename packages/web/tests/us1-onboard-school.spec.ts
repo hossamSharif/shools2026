@@ -1,14 +1,16 @@
 import { test, expect } from '@playwright/test';
+import path from 'node:path';
 
 /**
  * US1 E2E (T030): super-admin creates a school, sets its subscription, and adds
  * SMS credit; the school then appears in the operator list with correct dates
  * and a topped-up balance.
  *
- * Auth: relies on a super-admin session (storageState). Wired to a seeded
- * super-admin in the Gauntlet environment (T136). Until then this fails by
- * design (Article X — tests precede a green environment).
+ * Auth: seeded super-admin's storageState (see tests/global-setup.ts) — the
+ * app has no /login UI to drive interactively.
  */
+test.use({ storageState: path.resolve(__dirname, '.auth/super_admin.json') });
+
 test.describe('US1 — onboard a school tenant', () => {
   test('create school + subscription + credit, then verify in list', async ({ page }) => {
     const name = `مدرسة اختبار ${Date.now()}`;

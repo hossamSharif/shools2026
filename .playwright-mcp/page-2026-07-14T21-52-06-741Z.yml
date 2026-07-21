@@ -1,0 +1,124 @@
+- generic [active] [ref=f11e1]:
+  - alert [ref=f11e10]
+  - generic [ref=f11e11]:
+    - banner [ref=f11e12]:
+      - generic [ref=f11e13]: نظام محاسبة الرسوم المدرسية
+      - generic [ref=f11e14]: Super Admin
+    - generic [ref=f11e16]:
+      - navigation [ref=f11e17]:
+        - list [ref=f11e18]:
+          - listitem [ref=f11e19]:
+            - link "المدارس" [ref=f11e20] [cursor=pointer]:
+              - /url: /schools
+      - main [ref=f11e21]:
+        - generic [ref=f11e22]:
+          - generic [ref=f11e23]:
+            - heading "المدارس" [level=1] [ref=f11e24]
+            - link [ref=f11e25] [cursor=pointer]:
+              - /url: /schools/new
+              - button "مدرسة جديدة" [ref=f11e26]
+          - table [ref=f11e29]:
+            - rowgroup [ref=f11e30]:
+              - row [ref=f11e31]:
+                - columnheader "اسم المدرسة" [ref=f11e32]
+                - columnheader "بداية الاشتراك" [ref=f11e33]
+                - columnheader "نهاية الاشتراك" [ref=f11e34]
+                - columnheader "رصيد الرسائل" [ref=f11e35]
+                - columnheader [ref=f11e36]
+            - rowgroup [ref=f11e37]:
+              - row [ref=f11e38]:
+                - cell "مدرسة اختبار 1783998840794" [ref=f11e39]
+                - cell "٢٠٢٦/٠٧/٠١" [ref=f11e40]
+                - cell "٢٠٢٧/٠٦/٣٠" [ref=f11e41]
+                - cell "١٬٠٠٠" [ref=f11e42]
+                - cell [ref=f11e43]:
+                  - link "إضافة رصيد" [ref=f11e44] [cursor=pointer]:
+                    - /url: /schools/d8b4afd1-ebbc-4769-a94b-47d316f58b4c/credit
+              - row [ref=f11e45]:
+                - cell "مدرسة اختبار 1783986479073" [ref=f11e46]
+                - cell "٢٠٢٦/٠٧/٠١" [ref=f11e47]
+                - cell "٢٠٢٧/٠٦/٣٠" [ref=f11e48]
+                - cell "١٬٠٠٠" [ref=f11e49]
+                - cell [ref=f11e50]:
+                  - link "إضافة رصيد" [ref=f11e51] [cursor=pointer]:
+                    - /url: /schools/f7650f27-586b-4151-8646-3daf78dbb8f8/credit
+              - row [ref=f11e52]:
+                - cell "مدرسة اختبار 1783986183400" [ref=f11e53]
+                - cell "٢٠٢٦/٠٧/٠١" [ref=f11e54]
+                - cell "٢٠٢٧/٠٦/٣٠" [ref=f11e55]
+                - cell "١٬٠٠٠" [ref=f11e56]
+                - cell [ref=f11e57]:
+                  - link "إضافة رصيد" [ref=f11e58] [cursor=pointer]:
+                    - /url: /schools/a5ae8566-a6af-4c5f-a98d-0af147390517/credit
+              - row [ref=f11e59]:
+                - cell "مدرسة اختبار 1783985903796" [ref=f11e60]
+                - cell "٢٠٢٦/٠٧/٠١" [ref=f11e61]
+                - cell "٢٠٢٧/٠٦/٣٠" [ref=f11e62]
+                - cell "١٬٠٠٠" [ref=f11e63]
+                - cell [ref=f11e64]:
+                  - link "إضافة رصيد" [ref=f11e65] [cursor=pointer]:
+                    - /url: /schools/bd1369b9-7e2a-405d-8336-0267c41e074c/credit
+              - row [ref=f11e66]:
+                - cell "مدرسة اختبار 1783985633617" [ref=f11e67]
+                - cell "٢٠٢٦/٠٧/٠١" [ref=f11e68]
+                - cell "٢٠٢٧/٠٦/٣٠" [ref=f11e69]
+                - cell "١٬٠٠٠" [ref=f11e70]
+                - cell [ref=f11e71]:
+                  - link "إضافة رصيد" [ref=f11e72] [cursor=pointer]:
+                    - /url: /schools/9537099a-11a4-4011-a18a-2a8cba505422/credit
+              - row [ref=f11e73]:
+                - cell "مدرسة اختبار 1783983016193" [ref=f11e74]
+                - cell "٢٠٢٦/٠٧/٠١" [ref=f11e75]
+                - cell "٢٠٢٧/٠٦/٣٠" [ref=f11e76]
+                - cell "١٬٠٠٠" [ref=f11e77]
+                - cell [ref=f11e78]:
+                  - link "إضافة رصيد" [ref=f11e79] [cursor=pointer]:
+                    - /url: /schools/6ba7a12d-3876-4ecc-bb24-0a42ef27c084/credit
+              - row [ref=f11e80]:
+                - cell "مدرسة اختبار 1783982588874" [ref=f11e81]
+                - cell "٢٠٢٦/٠٧/٠١" [ref=f11e82]
+                - cell "٢٠٢٧/٠٦/٣٠" [ref=f11e83]
+                - cell "٣٬٠٠٠" [ref=f11e84]
+                - cell [ref=f11e85]:
+                  - link "إضافة رصيد" [ref=f11e86] [cursor=pointer]:
+                    - /url: /schools/6db09c73-55c6-4508-9fbb-e0f210aac98e/credit
+              - row [ref=f11e87]:
+                - cell "Gauntlet School E (No Credit)" [ref=f11e88]
+                - cell "٢٠٢٦/٠٦/٠٤" [ref=f11e89]
+                - cell "٢٠٢٦/٠٧/١٧" [ref=f11e90]
+                - cell "٠" [ref=f11e91]
+                - cell [ref=f11e92]:
+                  - link "إضافة رصيد" [ref=f11e93] [cursor=pointer]:
+                    - /url: /schools/e0000000-0000-0000-0000-00000000000e/credit
+              - row [ref=f11e94]:
+                - cell "Gauntlet School D (Locked)" [ref=f11e95]
+                - cell "٢٠٢٥/٠٥/٣٠" [ref=f11e96]
+                - cell "٢٠٢٦/٠٥/٢٥" [ref=f11e97]
+                - cell "٠" [ref=f11e98]
+                - cell [ref=f11e99]:
+                  - link "إضافة رصيد" [ref=f11e100] [cursor=pointer]:
+                    - /url: /schools/d0000000-0000-0000-0000-00000000000d/credit
+              - row [ref=f11e101]:
+                - cell "Gauntlet School C (Grace)" [ref=f11e102]
+                - cell "٢٠٢٥/٠٥/٣٠" [ref=f11e103]
+                - cell "٢٠٢٦/٠٧/٠٣" [ref=f11e104]
+                - cell "٠" [ref=f11e105]
+                - cell [ref=f11e106]:
+                  - link "إضافة رصيد" [ref=f11e107] [cursor=pointer]:
+                    - /url: /schools/c0000000-0000-0000-0000-00000000000c/credit
+              - row [ref=f11e108]:
+                - cell "Gauntlet School A" [ref=f11e109]
+                - cell "٢٠٢٦/٠٦/٠٣" [ref=f11e110]
+                - cell "٢٠٢٧/٠٦/٠٣" [ref=f11e111]
+                - cell "١٬١٠٠" [ref=f11e112]
+                - cell [ref=f11e113]:
+                  - link "إضافة رصيد" [ref=f11e114] [cursor=pointer]:
+                    - /url: /schools/a0000000-0000-0000-0000-00000000000a/credit
+              - row [ref=f11e115]:
+                - cell "Gauntlet School B" [ref=f11e116]
+                - cell "٢٠٢٦/٠٦/٠٣" [ref=f11e117]
+                - cell "٢٠٢٧/٠٦/٠٣" [ref=f11e118]
+                - cell "٠" [ref=f11e119]
+                - cell [ref=f11e120]:
+                  - link "إضافة رصيد" [ref=f11e121] [cursor=pointer]:
+                    - /url: /schools/b0000000-0000-0000-0000-00000000000b/credit

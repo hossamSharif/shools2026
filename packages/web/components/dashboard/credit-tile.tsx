@@ -20,7 +20,7 @@ export function CreditTile({
       <CardContent className="space-y-1 pt-6">
         <p className="text-sm text-gray-500">رصيد الرسائل النصية</p>
         <p className={cn('text-2xl font-bold', isLow ? 'text-amber-700' : 'text-gray-900')}>
-          {remaining.toLocaleString('ar')}
+          {remaining.toLocaleString('en-US')}
         </p>
         {isLow && (
           <p className="text-xs font-medium text-amber-700">

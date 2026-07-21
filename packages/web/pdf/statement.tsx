@@ -1,10 +1,23 @@
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import type * as ReactPdf from '@react-pdf/renderer';
 
 /**
  * Student statement PDF template (US5, T099). RTL Arabic layout, SDG amounts.
  * Amounts are decimal strings (Money) — no math here (Article VI). Mirrors
  * pdf/receipt.tsx conventions.
+ *
+ * Server-only module (used solely by the statement PDF route handler, never
+ * by a client component) — loaded via a genuine Node `require()` rather than
+ * a static import. @react-pdf's reconciler uses class components
+ * (`React.Component`), which Next's RSC/route-handler bundling strips under
+ * the "react-server" module condition, crashing at runtime with "a.Component
+ * is not a constructor". `eval('require')` is opaque to webpack's static
+ * analysis, so it resolves via plain Node module resolution instead — a real
+ * bug found while running the Gauntlet E2E specs for the first time (no route
+ * using server-side @react-pdf/renderer had ever been exercised before).
  */
+const { Document, Page, Text, View, StyleSheet } = (eval('require') as NodeRequire)(
+  '@react-pdf/renderer',
+) as typeof ReactPdf;
 
 export interface StatementPdfRow {
   date: string;

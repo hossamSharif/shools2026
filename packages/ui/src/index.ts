@@ -12,6 +12,7 @@ export {
   DialogTitle,
 } from './components/dialog.js';
 export { DataTable, type DataTableProps } from './components/data-table.js';
+export { Sheet, SheetTrigger, SheetClose, SheetContent, SheetTitle } from './components/sheet.js';
 export {
   SubscriptionBanner,
   type SubscriptionBannerProps,

@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { Button, Card, CardContent } from '@erp/ui';
+import { Button } from '@erp/ui';
 import { createSupabaseServerClient } from '../../../lib/supabase/server.js';
 import { formatDate } from '../../../lib/format/date.js';
 import { formatNumber } from '../../../lib/format/number.js';
+import { SchoolsTable } from '../../../components/super-admin/schools-table.js';
 
 interface SchoolRow {
   id: string;
@@ -31,6 +32,17 @@ export default async function SchoolsPage() {
     .returns<SchoolRow[]>();
 
   const schools = data ?? [];
+  const rows = schools.map((s) => {
+    const sub = s.subscription?.[0];
+    const credit = (s.sms_credit_topup ?? []).reduce((n, r) => n + r.amount, 0);
+    return {
+      id: s.id,
+      name: s.name,
+      subscriptionStart: sub ? formatDate(sub.period_start) : '—',
+      subscriptionEnd: sub ? formatDate(sub.period_end) : '—',
+      creditBalance: formatNumber(credit),
+    };
+  });
 
   return (
     <div className="space-y-4">
@@ -41,53 +53,17 @@ export default async function SchoolsPage() {
         </Link>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          <table dir="rtl" className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-start font-semibold">{t('name')}</th>
-                <th className="px-4 py-2 text-start font-semibold">{t('subscriptionStart')}</th>
-                <th className="px-4 py-2 text-start font-semibold">{t('subscriptionEnd')}</th>
-                <th className="px-4 py-2 text-start font-semibold">{t('creditBalance')}</th>
-                <th className="px-4 py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {schools.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
-                    لا توجد مدارس بعد
-                  </td>
-                </tr>
-              ) : (
-                schools.map((s) => {
-                  const sub = s.subscription?.[0];
-                  const credit = (s.sms_credit_topup ?? []).reduce((n, r) => n + r.amount, 0);
-                  return (
-                    <tr key={s.id} className="border-t border-gray-100">
-                      <td className="px-4 py-2">{s.name}</td>
-                      <td className="px-4 py-2">
-                        {sub ? formatDate(sub.period_start) : '—'}
-                      </td>
-                      <td className="px-4 py-2">{sub ? formatDate(sub.period_end) : '—'}</td>
-                      <td className="px-4 py-2">{formatNumber(credit)}</td>
-                      <td className="px-4 py-2 text-start">
-                        <Link
-                          href={`/schools/${s.id}/credit`}
-                          className="text-emerald-600 hover:underline"
-                        >
-                          {t('addCredit')}
-                        </Link>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
+      <SchoolsTable
+        data={rows}
+        labels={{
+          name: t('name'),
+          subscriptionStart: t('subscriptionStart'),
+          subscriptionEnd: t('subscriptionEnd'),
+          creditBalance: t('creditBalance'),
+          addCredit: t('addCredit'),
+          empty: 'لا توجد مدارس بعد',
+        }}
+      />
     </div>
   );
 }
