@@ -20,6 +20,22 @@ html {
     opacity: 0;
   }
 }
+/* Dashboard cards/charts entrance: fade + rise. Staggered via inline
+   animationDelay on each card. Respects reduced-motion. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+.rise-in {
+  animation: rise-in 400ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
+}
 /* App is RTL-only (Article IX) — "start" is always the right edge, so the
    sheet always slides in from the right; no LTR case to branch on. */
 @keyframes slide-in-from-start {
