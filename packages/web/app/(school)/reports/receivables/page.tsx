@@ -5,6 +5,7 @@ import { receivablesAging, bucketTotals } from '../../../../lib/queries/receivab
 import { formatCurrency } from '../../../../lib/format/currency.js';
 import { ReceivablesFilters } from '../../../../components/reports/receivables-filters.js';
 import { ReceivablesTable } from '../../../../components/reports/receivables-table.js';
+import { PageHeader } from '../../../../components/layout/index.js';
 
 /** Receivables aging report (US5, T100). Filterable by stage/grade/section, with per-bucket totals. */
 export default async function ReceivablesPage({
@@ -38,15 +39,18 @@ export default async function ReceivablesPage({
 
   return (
     <div dir="rtl" className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">تقرير أعمار الديون</h1>
-        <a
-          href={`/reports/receivables/export?${new URLSearchParams(searchParams as Record<string, string>).toString()}`}
-          className="rounded-md border px-3 py-2 text-center text-sm hover:bg-gray-50"
-        >
-          تصدير CSV
-        </a>
-      </div>
+      <PageHeader
+        title="تقرير أعمار الديون"
+        subtitle="المستحقات غير المسددة موزعة حسب مدة التأخير"
+        actions={
+          <a
+            href={`/reports/receivables/export?${new URLSearchParams(searchParams as Record<string, string>).toString()}`}
+            className="inline-flex h-10 items-center rounded-md border border-border bg-surface px-4 text-sm font-medium hover:bg-muted"
+          >
+            تصدير CSV
+          </a>
+        }
+      />
 
       <ReceivablesFilters
         stages={stages ?? []}

@@ -23,8 +23,12 @@ const NAV: NavItem[] = [
   { href: '/schools', key: 'schools', roles: ['super_admin'] },
   { href: '/dashboard', key: 'dashboard', roles: ['school_admin', 'accountant', 'viewer'] },
   { href: '/students', key: 'students', roles: ['school_admin', 'accountant', 'viewer'] },
-  { href: '/payments/new', key: 'payments', roles: ['school_admin', 'accountant'], mutate: true },
-  { href: '/expenses/new', key: 'expenses', roles: ['school_admin', 'accountant'], mutate: true },
+  // The section landing pages are the lists; `/payments/new` and
+  // `/expenses/new` remain reachable as standalone routes. Still flagged
+  // `mutate` so the whole section disappears outside the active lifecycle
+  // state, exactly as before.
+  { href: '/payments', key: 'payments', roles: ['school_admin', 'accountant'], mutate: true },
+  { href: '/expenses', key: 'expenses', roles: ['school_admin', 'accountant'], mutate: true },
   { href: '/reports/receivables', key: 'reports', roles: ['school_admin', 'accountant', 'viewer'] },
   { href: '/sms', key: 'sms', roles: ['school_admin', 'accountant', 'viewer'] },
   { href: '/notifications', key: 'notifications', roles: ['school_admin', 'accountant', 'viewer'] },

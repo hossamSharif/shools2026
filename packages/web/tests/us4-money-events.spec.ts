@@ -63,8 +63,9 @@ test.describe('US4 — money events', () => {
     // The students list renders both a `md:hidden` mobile card link and a
     // `hidden md:block` DataTable link to the same href; only one is visible
     // at a given viewport, so filter to the visible one rather than relying
-    // on DOM order.
-    const firstStudentLink = page.locator('a[href*="/students/"]:visible').first();
+    // on DOM order. Targets the name link by test id so the header's
+    // `/students/export` CSV link can't be picked up instead.
+    const firstStudentLink = page.locator('[data-testid="student-link"]:visible').first();
     await firstStudentLink.waitFor();
     const href = await firstStudentLink.getAttribute('href');
     const studentId = href?.match(/\/students\/([^/]+)/)?.[1];

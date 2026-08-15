@@ -15,6 +15,7 @@ import { formatCurrency } from '../../../lib/format/currency.js';
 import { KpiCard } from '../../../components/dashboard/kpi-card.js';
 import { DashboardCharts } from '../../../components/dashboard/dashboard-charts.js';
 import { CreditTile } from '../../../components/dashboard/credit-tile.js';
+import { PageHeader } from '../../../components/layout/index.js';
 
 /** School admin dashboard (US6, T105). Fully derived KPI bundle, RTL. */
 export default async function DashboardPage() {
@@ -32,7 +33,7 @@ export default async function DashboardPage() {
 
   return (
     <div dir="rtl" className="space-y-6">
-      <h1 className="text-2xl font-bold">لوحة التحكم</h1>
+      <PageHeader title="لوحة التحكم" subtitle="نظرة عامة على الوضع المالي للمدرسة" />
 
       <section>
         <h2 className="mb-2 text-lg font-semibold">الحسابات</h2>

@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent } from '@erp/ui';
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server.js';
 import { studentStatement, totalOwed } from '../../../../../lib/queries/statement.js';
@@ -21,7 +22,15 @@ export default async function StatementPage({ params }: { params: { studentId: s
   return (
     <div dir="rtl" className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">كشف حساب — {student.name}</h1>
+        <div>
+          <h1 className="text-2xl font-bold">كشف حساب — {student.name}</h1>
+          <Link
+            href={`/students/${student.id}`}
+            className="text-sm text-primary hover:underline"
+          >
+            العودة لملف الطالب
+          </Link>
+        </div>
         <a
           href={`/students/${student.id}/statement/pdf`}
           target="_blank"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button, Input, Select, Card, CardHeader, CardTitle, CardContent } from '@erp/ui';
@@ -54,6 +54,14 @@ export function PaymentForm({
       }
     });
   };
+
+  // Arriving via `/payments/new?studentId=…` (from a student row or profile)
+  // pins the student, so nothing would ever fire the on-change load — pull the
+  // installments once on mount instead.
+  useEffect(() => {
+    if (fixedStudentId) loadInstallments(fixedStudentId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fixedStudentId]);
 
   const submit = () => {
     setError(null);

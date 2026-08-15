@@ -56,7 +56,7 @@ export function AccountsBarChart({
               fontSize: 13,
             }}
           />
-          <Bar dataKey="value" radius={[6, 6, 0, 0]} {...CHART_ANIMATION}>
+          <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={72} {...CHART_ANIMATION}>
             {data.map((_, i) => (
               <Cell key={i} fill={CHART_SERIES[i % CHART_SERIES.length]} />
             ))}

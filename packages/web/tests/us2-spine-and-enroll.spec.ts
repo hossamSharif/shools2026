@@ -74,8 +74,13 @@ test.describe('US2 — academic spine and enrollment', () => {
     let studentId = '';
     await test.step('add a student', async () => {
       await page.goto('/students');
-      await page.getByLabel('اسم الطالب').fill(studentName);
-      await page.getByRole('button', { name: 'إضافة الطالب' }).click();
+      // The create form now lives in a modal behind the header action.
+      await page.getByTestId('new-student').click();
+      const dialog = page.getByTestId('student-form-dialog');
+      await expect(dialog).toBeVisible();
+      await dialog.getByLabel('اسم الطالب').fill(studentName);
+      await dialog.getByRole('button', { name: 'إضافة الطالب' }).click();
+      await expect(dialog).toBeHidden({ timeout: 10_000 });
       const row = page.getByRole('row', { name: new RegExp(studentName) });
       await expect(row).toBeVisible({ timeout: 10_000 });
       const href = await row.getByRole('link', { name: studentName }).getAttribute('href');
@@ -103,7 +108,11 @@ test.describe('US2 — academic spine and enrollment', () => {
       // owed matching the fee structure's schedule sum (300 + 200 = 500).
       await page.goto(`/students/${studentId}/statement`);
       await expect(page.getByText('إجمالي المستحق')).toBeVisible();
-      await expect(page.getByText(/٥٠٠/).first()).toBeVisible();
+      // Latin digits, not Arabic-Indic: lib/format/number.ts formats money with
+      // the 'en-US' numbering system by design ("Western (Latin) digits while
+      // keeping the app's locale layout"), so the page renders "500.00 ج.س".
+      // The original /٥٠٠/ here could never match.
+      await expect(page.getByText(/500/).first()).toBeVisible();
     });
   });
 });

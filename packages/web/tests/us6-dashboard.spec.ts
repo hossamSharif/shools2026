@@ -39,7 +39,7 @@ test.describe('US6 — admin dashboard', () => {
 
     await test.step('per-account balances sum to the combined-total tile', async () => {
       const accountsSection = page.locator('section').filter({ hasText: 'الحسابات' });
-      const tiles = accountsSection.locator('p.text-xl');
+      const tiles = accountsSection.getByTestId('kpi-value');
       const tileCount = await tiles.count();
       expect(tileCount).toBeGreaterThan(1); // at least 1 account + the combined tile
 
@@ -61,9 +61,9 @@ test.describe('US6 — admin dashboard', () => {
 
       // Outstanding must be > 0 — School A's seed has unpaid installments.
       const outstandingText = await kpiSection
-        .getByText('المستحقات المتبقية')
-        .locator('..')
-        .locator('p.text-xl')
+        .locator('[data-testid="kpi-card"]')
+        .filter({ has: page.getByTestId('kpi-label').getByText('المستحقات المتبقية') })
+        .getByTestId('kpi-value')
         .innerText();
       expect(parseCurrency(outstandingText)).toBeGreaterThan(0);
     });

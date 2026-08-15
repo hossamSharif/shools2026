@@ -27,7 +27,9 @@ export function FinancialOverviewChart({
   expensesMonth: string;
   outstanding: string;
 }) {
-  // Declared right-to-left so the first item renders on the right (RTL).
+  // Recharts lays categories out left-to-right from index 0, so the array is
+  // pre-reversed: scanning the chart right-to-left (RTL) reads المحصّل →
+  // المصروفات → المستحقات, matching AccountsBarChart's reversed order.
   const data = [
     { name: 'المستحقات', value: Number(outstanding), fill: CHART_COLORS.warning },
     { name: 'المصروفات', value: Number(expensesMonth), fill: CHART_COLORS.danger },

@@ -38,10 +38,12 @@ export interface StudentFormProps {
     guardian_phone: string | null;
     status: 'active' | 'withdrawn' | 'graduated';
   };
+  /** Called after a successful save — used by the modal wrapper to close itself. */
+  onSaved?: (id: string) => void;
 }
 
 /** Create/edit student (US2). Pass `student` to edit; omit to create. */
-export function StudentForm({ student }: StudentFormProps) {
+export function StudentForm({ student, onSaved }: StudentFormProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
@@ -65,7 +67,7 @@ export function StudentForm({ student }: StudentFormProps) {
     setServerError(null);
     startTransition(async () => {
       try {
-        await upsertStudent({
+        const saved = await upsertStudent({
           id: student?.id,
           name: values.name,
           guardian_name: values.guardian_name || undefined,
@@ -74,6 +76,7 @@ export function StudentForm({ student }: StudentFormProps) {
         });
         if (!student) reset({ name: '', guardian_name: '', guardian_phone: '', status: 'active' });
         router.refresh();
+        onSaved?.(saved.id);
       } catch (e) {
         setServerError(e instanceof Error ? e.message : 'حدث خطأ');
       }

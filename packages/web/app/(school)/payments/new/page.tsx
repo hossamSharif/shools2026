@@ -11,8 +11,16 @@ interface AccountRow {
   type: 'cash' | 'bank';
 }
 
-/** New fee-payment page — loads students + accounts for the form (US3). */
-export default async function NewPaymentPage() {
+/**
+ * New fee-payment page — loads students + accounts for the form (US3).
+ * `?studentId=` pins the form to one student, so "تسجيل دفعة" from a student
+ * row or profile lands with the student already chosen.
+ */
+export default async function NewPaymentPage({
+  searchParams,
+}: {
+  searchParams: { studentId?: string };
+}) {
   const supabase = createSupabaseServerClient();
   const [{ data: students }, { data: accounts }] = await Promise.all([
     supabase
@@ -32,6 +40,7 @@ export default async function NewPaymentPage() {
     <div dir="rtl" className="space-y-4">
       <h1 className="text-2xl font-bold">دفعة جديدة</h1>
       <PaymentForm
+        studentId={searchParams.studentId}
         students={(students ?? []).map((s) => ({ id: s.id, label: s.name }))}
         accounts={(accounts ?? []).map((a) => ({
           id: a.id,

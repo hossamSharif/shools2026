@@ -40,6 +40,7 @@ export function KpiCard({
     <Card
       className={cn('rise-in transition-shadow hover:shadow-md', className)}
       style={style}
+      data-testid="kpi-card"
     >
       <CardContent className="flex items-start gap-3 p-4">
         <span
@@ -52,8 +53,15 @@ export function KpiCard({
           <Icon className="h-5 w-5" />
         </span>
         <div className="min-w-0 space-y-0.5">
-          <p className="truncate text-sm text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold leading-tight text-gray-900">{value}</p>
+          <p className="truncate text-sm text-muted-foreground" data-testid="kpi-label">
+            {label}
+          </p>
+          <p
+            className="text-2xl font-bold leading-tight text-gray-900"
+            data-testid="kpi-value"
+          >
+            {value}
+          </p>
           {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
         </div>
       </CardContent>

@@ -1,0 +1,14 @@
+- generic [active] [ref=f1e1]:
+  - main [ref=f1e2]:
+    - heading "نظام محاسبة الرسوم المدرسية" [level=1] [ref=f1e3]
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - text: البريد الإلكتروني
+        - textbox "البريد الإلكتروني" [ref=f1e6]: admin.a@gauntlet.test
+      - generic [ref=f1e7]:
+        - text: كلمة المرور
+        - textbox "كلمة المرور" [ref=f1e8]: password123
+      - button "جارٍ الدخول…" [disabled]
+      - link "نسيت كلمة المرور؟" [ref=f1e10] [cursor=pointer]:
+        - /url: /forgot-password
+  - alert [ref=f1e11]

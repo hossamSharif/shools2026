@@ -126,6 +126,80 @@ export async function upsertStudent(input: {
   return { id: data.id };
 }
 
+/**
+ * Archive / restore a student (US2 enhancement). This is the supported way to
+ * take a student off the active roster: their financial history stays intact
+ * and they keep appearing on statements and the receivables report while they
+ * owe anything (spec Edge case).
+ */
+export async function setStudentStatus(
+  studentId: string,
+  status: 'active' | 'withdrawn' | 'graduated',
+): Promise<void> {
+  const { supabase, schoolId } = await schoolCtx();
+  const { error } = await supabase
+    .from('student')
+    .update({ status })
+    .eq('id', studentId)
+    .eq('school_id', schoolId);
+  if (error) throw new Error(error.message);
+  revalidatePath('/students');
+  revalidatePath(`/students/${studentId}`);
+}
+
+/**
+ * Delete a student — only ever allowed for a record with no financial
+ * footprint (a typo, a duplicate). `student` cascades to `installment` and
+ * `discount`, so deleting one that has money attached would destroy immutable
+ * records (Article III).
+ *
+ * The `student_delete_guard` trigger (migration 0030) is the actual
+ * enforcement; the pre-check here exists purely to produce a specific Arabic
+ * message instead of a raw Postgres error, and to keep the UI honest about
+ * which rows are deletable.
+ */
+export async function deleteStudent(studentId: string): Promise<void> {
+  // Deletion is the one student operation an accountant must not have.
+  const ctx = await requireRole('school_admin');
+  if (!ctx.schoolId) throw new Error('no school context');
+  const schoolId = ctx.schoolId;
+  const supabase = createSupabaseServerClient();
+
+  const [{ count: instCount }, { count: eventCount }, { count: discountCount }] =
+    await Promise.all([
+      supabase
+        .from('installment')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_id', studentId),
+      supabase
+        .from('money_event')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_id', studentId),
+      supabase
+        .from('discount')
+        .select('id', { count: 'exact', head: true })
+        .eq('student_id', studentId),
+    ]);
+
+  if ((instCount ?? 0) > 0 || (eventCount ?? 0) > 0 || (discountCount ?? 0) > 0) {
+    throw new Error('الطالب لديه سجل مالي — لا يمكن الحذف. استخدم الأرشفة بدلاً من ذلك.');
+  }
+
+  const { error } = await supabase
+    .from('student')
+    .delete()
+    .eq('id', studentId)
+    .eq('school_id', schoolId);
+  if (error) {
+    // The trigger fired — a money row landed between the check and the delete.
+    if (error.message.includes('STUDENT_HAS_FINANCIAL_HISTORY')) {
+      throw new Error('الطالب لديه سجل مالي — لا يمكن الحذف. استخدم الأرشفة بدلاً من ذلك.');
+    }
+    throw new Error(error.message);
+  }
+  revalidatePath('/students');
+}
+
 export async function createFeeStructure(input: {
   grade_id: string;
   academic_year_id: string;

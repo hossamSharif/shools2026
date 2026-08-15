@@ -3,27 +3,26 @@
 import Link from 'next/link';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@erp/ui';
+import { formatCurrency } from '../../lib/format/currency.js';
+import { formatDate } from '../../lib/format/date.js';
+import type { StudentDirectoryRow } from '../../lib/queries/students.js';
+import { FinStatusBadge } from './fin-status-badge.js';
+import { StudentRowActions } from './student-row-actions.js';
+import { STUDENT_STATUS_AR } from './labels.js';
 
-export interface StudentRow {
-  id: string;
-  name: string;
-  guardian_name: string | null;
-  guardian_phone: string | null;
-  status: 'active' | 'withdrawn' | 'graduated';
-}
+/** Re-exported for the mobile card list; the directory RPC is the single source. */
+export type StudentRow = StudentDirectoryRow;
 
-const STATUS_AR: Record<StudentRow['status'], string> = {
-  active: 'نشط',
-  withdrawn: 'منسحب',
-  graduated: 'متخرج',
-};
-
-const columns: ColumnDef<StudentRow, unknown>[] = [
+const columns: ColumnDef<StudentDirectoryRow, unknown>[] = [
   {
     accessorKey: 'name',
     header: 'الاسم',
     cell: (c) => (
-      <Link href={`/students/${c.row.original.id}`} className="text-emerald-600 hover:underline">
+      <Link
+        href={`/students/${c.row.original.student_id}`}
+        data-testid="student-link"
+        className="font-medium text-primary hover:underline"
+      >
         {c.getValue() as string}
       </Link>
     ),
@@ -39,18 +38,56 @@ const columns: ColumnDef<StudentRow, unknown>[] = [
     cell: (c) => (c.getValue() as string | null) ?? '—',
   },
   {
-    accessorKey: 'status',
-    header: 'الحالة',
-    cell: (c) => STATUS_AR[c.getValue() as StudentRow['status']],
+    id: 'class',
+    header: 'الصف / الشعبة',
+    cell: (c) => {
+      const { grade_label, section_name } = c.row.original;
+      if (!grade_label) return <span className="text-muted-foreground">غير مسجّل</span>;
+      return [grade_label, section_name].filter(Boolean).join(' - ');
+    },
   },
   {
-    id: 'action',
+    accessorKey: 'total_owed',
+    header: 'الرصيد المستحق',
+    cell: (c) => {
+      const owed = Number(c.getValue() as string);
+      return (
+        <span className={owed > 0 ? 'font-medium text-danger' : 'text-muted-foreground'}>
+          {formatCurrency(c.getValue() as string)}
+        </span>
+      );
+    },
+  },
+  {
+    id: 'next_due',
+    header: 'الاستحقاق القادم',
+    cell: (c) => {
+      const { next_due_date, next_due_amount } = c.row.original;
+      if (!next_due_date) return <span className="text-muted-foreground">—</span>;
+      return (
+        <span className="whitespace-nowrap">
+          {formatDate(`${next_due_date}T00:00:00Z`)}
+          <span className="ms-2 text-xs text-muted-foreground">
+            {formatCurrency(next_due_amount)}
+          </span>
+        </span>
+      );
+    },
+  },
+  {
+    accessorKey: 'fin_status',
+    header: 'الحالة المالية',
+    cell: (c) => <FinStatusBadge status={c.row.original.fin_status} />,
+  },
+  {
+    accessorKey: 'status',
+    header: 'حالة الطالب',
+    cell: (c) => STUDENT_STATUS_AR[c.getValue() as StudentDirectoryRow['status']],
+  },
+  {
+    id: 'actions',
     header: '',
-    cell: (c) => (
-      <Link href={`/students/${c.row.original.id}/enroll`} className="text-emerald-600 hover:underline">
-        تسجيل
-      </Link>
-    ),
+    cell: (c) => <StudentRowActions row={c.row.original} />,
   },
 ];
 
@@ -59,6 +96,12 @@ const columns: ColumnDef<StudentRow, unknown>[] = [
  * StatementTable/ReceivablesTable — column defs with `cell` render functions
  * must live inside the client boundary).
  */
-export function StudentsTable({ data }: { data: StudentRow[] }) {
-  return <DataTable columns={columns} data={data} emptyMessage="لا يوجد طلاب بعد" />;
+export function StudentsTable({ data }: { data: StudentDirectoryRow[] }) {
+  return (
+    <DataTable
+      columns={columns}
+      data={data}
+      emptyMessage="لا يوجد طلاب مطابقون لعوامل التصفية"
+    />
+  );
 }

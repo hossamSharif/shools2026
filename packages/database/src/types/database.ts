@@ -1111,6 +1111,7 @@ export type Database = {
         }
         Returns: Json
       }
+      ar_normalize: { Args: { p_text: string }; Returns: string }
       assert_writes_allowed: {
         Args: { p_context?: string; p_school_id: string }
         Returns: undefined
@@ -1135,6 +1136,7 @@ export type Database = {
       }
       current_school_id: { Args: never; Returns: string }
       dashboard_kpis: { Args: { p_school_id: string }; Returns: Json }
+      digits_only: { Args: { p_text: string }; Returns: string }
       emit_expiry_notifications: {
         Args: { p_within_days?: number }
         Returns: number
@@ -1242,7 +1244,94 @@ export type Database = {
         Returns: Json
       }
       sms_credit_balance: { Args: { p_school_id: string }; Returns: number }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       student_balance: { Args: { p_student_id: string }; Returns: number }
+      student_directory: {
+        Args: {
+          p_academic_year_id?: string
+          p_due_within_days?: number
+          p_fin_status?: string
+          p_grade_id?: string
+          p_missing_phone?: boolean
+          p_q?: string
+          p_school_id: string
+          p_section_id?: string
+          p_sort?: string
+          p_stage_id?: string
+          p_status?: string
+          p_unenrolled?: boolean
+        }
+        Returns: {
+          academic_year_id: string
+          days_overdue: number
+          fin_status: string
+          grade_id: string
+          grade_label: string
+          guardian_name: string
+          guardian_phone: string
+          installments_settled: number
+          installments_total: number
+          name: string
+          next_due_amount: number
+          next_due_date: string
+          overdue_amount: number
+          section_id: string
+          section_name: string
+          status: string
+          student_id: string
+          total_charged: number
+          total_discount: number
+          total_owed: number
+          total_paid: number
+        }[]
+      }
+      student_financial_summary: {
+        Args: { p_student_id: string }
+        Returns: {
+          collection_rate: number
+          days_overdue: number
+          installments_settled: number
+          installments_total: number
+          next_due_amount: number
+          next_due_date: string
+          oldest_overdue_date: string
+          overdue_amount: number
+          total_adjusted: number
+          total_charged: number
+          total_discount: number
+          total_owed: number
+          total_paid: number
+          total_refunded: number
+        }[]
+      }
+      student_installments: {
+        Args: { p_student_id: string }
+        Returns: {
+          amount_charged: number
+          amount_discount: number
+          amount_paid: number
+          due_date: string
+          installment_id: string
+          is_carried_in: boolean
+          remaining: number
+          sequence: number
+          status: string
+        }[]
+      }
+      student_payments: {
+        Args: { p_student_id: string }
+        Returns: {
+          account_name: string
+          amount: number
+          is_reversal: boolean
+          is_reversed: boolean
+          money_event_id: string
+          notes: string
+          occurred_at: string
+          receipt_no: number
+        }[]
+      }
       student_statement: {
         Args: { p_student_id: string }
         Returns: {
