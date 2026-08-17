@@ -1,0 +1,28 @@
+# Keeps the Fly build context small and stops host-built artifacts (or a real
+# .env) from leaking into the image. Secrets reach the worker via `fly secrets`.
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/.turbo
+.turbo
+.git
+.env
+.env.*
+!.env.example
+
+# The worker needs no web/ui SOURCE, but their package.json files must stay in
+# the context: pnpm-workspace.yaml globs packages/*, and `pnpm install
+# --frozen-lockfile` fails if a package the lockfile knows about is missing.
+packages/web
+!packages/web/package.json
+packages/ui
+!packages/ui/package.json
+specs
+docs
+.playwright-mcp
+**/playwright-report
+**/test-results
+**/coverage
+*.log
+*.tsbuildinfo

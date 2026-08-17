@@ -173,6 +173,41 @@ test.describe('Students directory — create, edit, delete', () => {
     });
   });
 
+  test('row menu opens fully inside the viewport, labels not clipped', async ({ page }) => {
+    // Regression: the menu used to be an absolutely-positioned child of the
+    // table, which `DataTable`'s `overflow-x-auto` wrapper clipped. The actions
+    // column is last — hard against the left edge in RTL — so the menu was
+    // sliced in half and its labels rendered as fragments ("تسجيا").
+    await page.goto('/students');
+    const row = page.locator('table tbody tr').first();
+    await row.getByTestId('row-actions-trigger').click();
+
+    const menu = page.getByTestId('row-actions-menu');
+    await expect(menu).toBeVisible();
+
+    const box = await menu.boundingBox();
+    const viewport = page.viewportSize();
+    expect(box).not.toBeNull();
+    expect(viewport).not.toBeNull();
+
+    // Fully within the viewport on both axes — the actual bug.
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.y).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
+
+    // A long label renders in full rather than as a clipped fragment.
+    const enrol = menu.getByRole('menuitem', { name: 'تسجيل في صف' });
+    await expect(enrol).toBeVisible();
+    const enrolBox = await enrol.boundingBox();
+    expect(enrolBox!.x).toBeGreaterThanOrEqual(0);
+    expect(enrolBox!.x + enrolBox!.width).toBeLessThanOrEqual(viewport!.width);
+
+    // Escape closes and returns focus to the trigger.
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+  });
+
   test('delete is blocked for a student who has financial history', async ({ page }) => {
     await page.goto('/students');
     // Seeded student 1 carries installments, payments and discounts.

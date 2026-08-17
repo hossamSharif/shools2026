@@ -35,7 +35,10 @@ export async function listPayments(
   let query = supabase
     .from('money_event')
     .select(
-      'id, receipt_no, occurred_at, amount, notes, reverses_event_id, student:student(id, name), account:account(id, name)',
+      // `account` must be disambiguated: money_event has three FKs to account
+      // (account_id, from_account_id, to_account_id), so a bare embed is
+      // ambiguous and PostgREST rejects it (PGRST201).
+      'id, receipt_no, occurred_at, amount, notes, reverses_event_id, student:student(id, name), account:account!money_event_account_id_fkey(id, name)',
     )
     .eq('school_id', schoolId)
     .eq('event_type', 'fee_payment')
@@ -90,7 +93,8 @@ export async function listExpenses(
   let query = supabase
     .from('money_event')
     .select(
-      'id, occurred_at, amount, category, vendor, description, reverses_event_id, account:account(id, name)',
+      // Same disambiguation as listPayments — see note there.
+      'id, occurred_at, amount, category, vendor, description, reverses_event_id, account:account!money_event_account_id_fkey(id, name)',
     )
     .eq('school_id', schoolId)
     .eq('event_type', 'expense')

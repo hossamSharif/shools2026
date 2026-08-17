@@ -77,6 +77,9 @@ export async function sendManualReminder(
     if (body.error === 'DISPATCH_PAUSED') {
       throw new Error('الإرسال متوقف — يرجى تجديد الاشتراك');
     }
+    if (body.error === 'SMS_DISPATCH_DISABLED') {
+      throw new Error('خدمة الرسائل غير مفعّلة في هذا النظام');
+    }
     throw new Error('تعذّر إرسال التذكير');
   }
 
