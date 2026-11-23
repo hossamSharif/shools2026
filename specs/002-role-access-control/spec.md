@@ -15,6 +15,12 @@ Related features in this phase (referenced by number, specified separately):
 - **02**: teacher ↔ section/subject allocation (the relationship teacher scoping depends on).
 - **08**: guardian and student portal login (the login screens for the reserved portal roles).
 
+## Clarifications
+
+### Session 2026-11-23
+
+- Q: Multi-role users — several roles per user, or one role plus extra permissions? → A: Several staff roles per user; effective rights are the union of the roles. Per-role optional switches (FR-010) still apply. There are no per-user extra permissions.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Data-layer enforcement replaces "any school user sees everything" (Priority: P1)
@@ -86,7 +92,7 @@ A principal, a student-affairs officer and a teacher each sign in and can do exa
 2. **Given** a student-affairs user, **When** they try to record any money event, apply a discount, or edit a fee structure, **Then** the action is refused.
 3. **Given** a teacher, **When** they try to create, edit or delete a student, section, enrollment or academic year, **Then** the action is refused.
 4. **Given** a principal, **When** they open student and enrollment data, **Then** they can view all students of the school. Finance visibility follows the principal decision recorded in FR-012.
-5. **Given** a user who holds two roles (see FR-004), **When** they act, **Then** they can do whatever either role allows and nothing that neither allows.
+5. **Given** a user who holds both the teacher and student-affairs roles, **When** they act, **Then** they can do whatever either role allows and nothing that neither allows. For example, they can edit student records (student affairs) but still cannot read any finance data.
 
 ---
 
@@ -164,7 +170,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 - **FR-001**: System MUST support these roles: `super_admin` (SaaS operator, no school), staff roles `school_admin`, `principal`, `student_affairs`, `teacher`, `accountant`, `viewer`, and reserved portal roles `guardian`, `student`.
 - **FR-002**: `school_admin` MUST keep full access to every module of its own school, acting as the school's system administrator. It is the only school role that may manage users, roles, optional permissions and school settings.
 - **FR-003**: `accountant` and `viewer` MUST keep exactly their Phase 1 permissions (FR-005 and FR-006 of spec 001), including every finance read and write they have today and nothing new by default.
-- **FR-004**: A staff user MUST be able to hold more than one staff role at the same time [NEEDS CLARIFICATION: support several roles per user (effective rights = union of roles), or one role per user plus extra individual permissions?]. Every user still belongs to exactly one school. The portal roles (`guardian`, `student`) MUST NOT be combined with staff roles on the same account.
+- **FR-004**: A staff user MUST be able to hold one or more staff roles at the same time. Their effective rights are the union of those roles' rights, including each role's optional permissions as set by the school (FR-010). Rights are never granted to an individual user outside their roles. Every user still belongs to exactly one school and has at least one role while active. The portal roles (`guardian`, `student`) MUST NOT be combined with staff roles on the same account.
 - **FR-005**: The existing `viewer` role [NEEDS CLARIFICATION: is `viewer` still needed once `principal` exists — keep it as-is, retire it by migrating viewers to principal, or keep it but deprecate it for new users?]. Whatever the answer, existing viewer users MUST keep their current access without any action from the school.
 
 **Access matrix**
@@ -186,7 +192,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
   | Users | all | view | — | — | — | — | — | — |
 
 - **FR-008**: "Students, limited fields" for teachers MUST mean: name, photo, grade, section, enrollment status. It MUST exclude guardian contact (unless the optional permission in FR-010 is on), any financial field or status, and any internal notes.
-- **FR-009**: Rights from roles MUST combine as the union of the user's roles (or role plus grants, per FR-004), intersected with relationship scope. No combination may produce a right that is in the never-grantable set (FR-011).
+- **FR-009**: Rights MUST combine as the union of the user's roles (FR-004), intersected with relationship scope. No combination may produce a right that is in the never-grantable set (FR-011).
 - **FR-010**: The school admin MUST be able to turn on or off, per role within their own school, only the following product-defined optional permissions (default shown):
   - Teacher: view guardian name and phone for allocated students (default off).
   - Teacher: publish announcements to own sections without principal approval (default off).
@@ -240,7 +246,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 ### Key Entities *(include if feature involves data)*
 
 - **User** (extended): a person signed in to exactly one school (except the super-admin). Gains a status (invited / active / deactivated) and, per FR-004, one or more roles.
-- **Role assignment**: links a user to a role within their school. A user may have several (subject to FR-004), and each assignment carries who assigned it and when.
+- **Role assignment**: links a user to a role within their school. A staff user may have several (FR-004), and each assignment carries who assigned it and when.
 - **Role**: product-defined set (FR-001). Schools cannot create new roles.
 - **Access matrix (default)**: product-fixed mapping of role × module → allowed actions (FR-007). Same for all schools.
 - **Optional permission**: a product-defined permission in the FR-010 catalogue that a school admin may turn on or off for a role within their school. Stored per school and per role.
