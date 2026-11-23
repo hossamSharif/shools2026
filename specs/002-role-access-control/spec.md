@@ -22,6 +22,7 @@ Related features in this phase (referenced by number, specified separately):
 - Q: Multi-role users — several roles per user, or one role plus extra permissions? → A: Several staff roles per user; effective rights are the union of the roles. Per-role optional switches (FR-010) still apply. There are no per-user extra permissions.
 - Q: Does the principal see finance data by default? → A: School-level dashboard totals only, with no per-student or per-account detail. Full finance read-only access is an optional switch the school admin can turn on. The principal never has any finance write right.
 - Q: Is the viewer role still needed once principal exists? → A: Yes. Keep viewer unchanged as the finance-only read-only role (owner, auditor, board member). It can still be assigned to new users.
+- Q: Should principal and student affairs be scoped per stage (Primary / Middle / Secondary)? → A: Optionally. When assigning the role, the school admin may limit it to one or more stages. With no stages chosen, the role covers the whole school.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -153,6 +154,8 @@ The guardian and student roles exist in the role model and in the matrix, with r
 - **Teacher with no allocations**: sees no academic or student data at all (not "everything", not an error). Feature 02 later adds allocations.
 - **Teacher allocation removed mid-year**: access to that section's data ends within 5 minutes. Data the teacher entered earlier (in later features) stays attributed to them.
 - **Student transferred to another section**: teacher and guardian visibility follows the current enrollment. Teachers of the old section lose access to the student's new records.
+- **Student moves to another stage** (for example promoted from Primary 6 to Middle 1, or re-enrolled in a different stage): stage-scoped principal and student-affairs visibility follows the current enrollment. Staff scoped only to the old stage lose access to the student's records from the new enrollment onward.
+- **Student with no current enrollment** (for example withdrawn): visible only to school-wide principal and student-affairs users, the school admin, and the roles that see such students today (accountant, viewer). Stage-scoped staff do not see them.
 - **Guardian linked to several students (siblings)**: sees each linked student, and nothing of non-linked siblings or classmates.
 - **Multi-role user loses one role**: keeps only the permissions of the remaining roles. Losing the last role leaves the user with no school access (treated like deactivated).
 - **User whose only role is reserved (guardian/student) appears on the staff users page**: shown as portal users, not editable as staff in this feature.
@@ -214,7 +217,8 @@ The guardian and student roles exist in the role model and in the matrix, with r
 - **FR-015**: Relationship scope MUST be decided from the caller's own identity and stored relationships, never from values the caller supplies in a request.
 - **FR-016**: A teacher MUST see academic and student data only for the sections and subjects allocated to them for the current academic year. Until allocations exist (feature 02), a teacher MUST see no academic or student data at all.
 - **FR-017**: A guardian MUST see only students they are linked to. A student MUST see only their own record. The link records themselves are defined in feature 08 (guardian linking reuses the existing student guardian contact and does not duplicate it). Until then, links can be created only by test fixtures.
-- **FR-018**: When a relationship ends (allocation removed, enrollment moved, guardian unlinked), access derived from it MUST end within 5 minutes.
+- **FR-018**: When a relationship ends (allocation removed, enrollment moved, guardian unlinked, stage scope changed), access derived from it MUST end within 5 minutes.
+- **FR-018a**: When assigning the `principal` or `student_affairs` role, the school admin MUST be able to limit it to one or more of the school's stages (Primary, Middle, Secondary). With no stages chosen, the role covers the whole school; all migrated and existing assignments start this way. A stage-scoped role's rights for students, academics, attendance, homework, exams and announcement audiences apply only to students currently enrolled, and sections and grades, in those stages. Users, settings, website CMS and the principal's finance visibility (FR-012) are not narrowed by stage. A user holding the same role for different stages sees the union of those stages. Stage scope is not available for other roles.
 
 **Enforcement**
 
@@ -236,7 +240,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 
 **Audit**
 
-- **FR-031**: The system MUST record an immutable audit entry for every invitation (sent, accepted, revoked, expired), role added or removed, deactivation, reactivation, and optional-permission change, with actor, target user, before and after values, and timestamp.
+- **FR-031**: The system MUST record an immutable audit entry for every invitation (sent, accepted, revoked, expired), role added or removed, stage scope changed, deactivation, reactivation, and optional-permission change, with actor, target user, before and after values, and timestamp.
 - **FR-032**: Access audit entries MUST NOT be editable or deletable by anyone, and MUST be readable only by the school admin of that school (and the principal if the Users "view" right applies).
 - **FR-033**: School admins MUST be able to filter the access audit log by user, action type and date range, and export it.
 
@@ -249,7 +253,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 ### Key Entities *(include if feature involves data)*
 
 - **User** (extended): a person signed in to exactly one school (except the super-admin). Gains a status (invited / active / deactivated) and, per FR-004, one or more roles.
-- **Role assignment**: links a user to a role within their school. A staff user may have several (FR-004), and each assignment carries who assigned it and when.
+- **Role assignment**: links a user to a role within their school. A staff user may have several (FR-004), and each assignment carries who assigned it and when. Principal and student-affairs assignments may carry an optional set of stages (FR-018a); an empty set means school-wide. Changes to stage scope are audited like role changes.
 - **Role**: product-defined set (FR-001). Schools cannot create new roles.
 - **Access matrix (default)**: product-fixed mapping of role × module → allowed actions (FR-007). Same for all schools.
 - **Optional permission**: a product-defined permission in the FR-010 catalogue that a school admin may turn on or off for a role within their school. Stored per school and per role.
