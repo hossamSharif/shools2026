@@ -57,7 +57,9 @@ $$;
 comment on function public.generate_installments(uuid) is
   'Materializes a student''s installments from the matching fee structure on enrollment (FR-018); no-op when none.';
 
-grant execute on function public.generate_installments(uuid) to authenticated;
+-- Hotfix 0032a: internal-only (worker / trigger). Not executable by authenticated.
+revoke execute on function public.generate_installments(uuid) from public, anon, authenticated;
+grant execute on function public.generate_installments(uuid) to service_role;
 
 -- Trigger: generate on enrollment insert.
 create or replace function public.trg_generate_installments()

@@ -37,6 +37,9 @@ as $$
 declare
   v_today date := (now() at time zone 'Africa/Khartoum')::date;
 begin
+  -- 0032a: refuse ids of another school (rpc-contracts §E0).
+  perform public.assert_target_school(p_school_id);
+
   return query
   with latest_enrollment as (
     select distinct on (en.student_id)
@@ -99,4 +102,5 @@ $$;
 comment on function public.receivables_aging(uuid, uuid, uuid, uuid) is
   'Derived receivables aging report (current/1-30/31-60/61-90/90+) in Africa/Khartoum, filterable by stage/grade/section. Includes withdrawn/graduated students with a balance.';
 
-grant execute on function public.receivables_aging(uuid, uuid, uuid, uuid) to authenticated;
+revoke execute on function public.receivables_aging(uuid, uuid, uuid, uuid) from public, anon;
+grant execute on function public.receivables_aging(uuid, uuid, uuid, uuid) to authenticated, service_role;

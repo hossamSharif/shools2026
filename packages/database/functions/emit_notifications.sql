@@ -13,16 +13,24 @@
 -- (same signature/semantics).
 create or replace function public.sms_credit_balance(p_school_id uuid)
 returns int
-language sql
+language plpgsql
 stable
 security definer
 set search_path = public
 as $$
-  select coalesce((select sum(amount) from public.sms_credit_topup where school_id = p_school_id), 0)
-       - coalesce((select sum(segments) from public.sms_credit_consumption where school_id = p_school_id), 0);
+begin
+  -- 0032a: refuse ids of another school (rpc-contracts §E0).
+  perform public.assert_target_school(p_school_id);
+
+  return (
+    select coalesce((select sum(amount) from public.sms_credit_topup where school_id = p_school_id), 0)
+           - coalesce((select sum(segments) from public.sms_credit_consumption where school_id = p_school_id), 0)
+  );
+end;
 $$;
 
-grant execute on function public.sms_credit_balance(uuid) to authenticated;
+revoke execute on function public.sms_credit_balance(uuid) from public, anon;
+grant execute on function public.sms_credit_balance(uuid) to authenticated, service_role;
 
 -- check_low_sms_credit — call after any consumption. Notifies every non-viewer
 -- user of the school once the balance drops at/below p_threshold, at most once
@@ -64,8 +72,9 @@ begin
 end;
 $$;
 
-revoke execute on function public.check_low_sms_credit(uuid, int) from public, anon;
-grant execute on function public.check_low_sms_credit(uuid, int) to authenticated;
+-- Hotfix 0032a: internal-only (worker / trigger). Not executable by authenticated.
+revoke execute on function public.check_low_sms_credit(uuid, int) from public, anon, authenticated;
+grant execute on function public.check_low_sms_credit(uuid, int) to service_role;
 
 -- emit_expiry_notifications — called from the cron job
 -- (packages/api/src/cron/expiry-notifications.ts). Notifies every non-viewer

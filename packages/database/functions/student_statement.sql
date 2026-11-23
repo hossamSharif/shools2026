@@ -15,78 +15,86 @@ returns table (
   credit           numeric(14,2),
   running_balance  numeric(14,2)
 )
-language sql
+language plpgsql
 stable
 security definer
 set search_path = public
 as $$
+#variable_conflict use_column
+begin
+  -- 0032a: refuse ids of another school (rpc-contracts §E0).
+  perform public.assert_target_school((select s.school_id from public.student s where s.id = p_student_id));
+
+  return query
   with entries as (
-    -- Installment charges (what the student was billed).
-    select i.due_date::timestamptz as entry_date,
-           'charge'::text as entry_type,
-           coalesce('قسط رقم ' || i.sequence, 'قسط') as description,
-           i.amount_charged as charge,
-           0::numeric(14,2) as credit
-      from public.installment i
-     where i.student_id = p_student_id
+      -- Installment charges (what the student was billed).
+      select i.due_date::timestamptz as entry_date,
+             'charge'::text as entry_type,
+             coalesce('قسط رقم ' || i.sequence, 'قسط') as description,
+             i.amount_charged as charge,
+             0::numeric(14,2) as credit
+        from public.installment i
+       where i.student_id = p_student_id
 
-    union all
+      union all
 
-    -- Payments allocated to this student's installments (money in, reduces owed).
-    select e.occurred_at,
-           'payment',
-           'دفعة - إيصال رقم ' || coalesce(e.receipt_no::text, ''),
-           0::numeric(14,2),
-           pa.amount
-      from public.payment_allocation pa
-      join public.installment i on i.id = pa.installment_id
-      join public.money_event e on e.id = pa.money_event_id
-     where i.student_id = p_student_id
-       and e.reverses_event_id is null
-       and not exists (select 1 from public.money_event r where r.reverses_event_id = e.id)
+      -- Payments allocated to this student's installments (money in, reduces owed).
+      select e.occurred_at,
+             'payment',
+             'دفعة - إيصال رقم ' || coalesce(e.receipt_no::text, ''),
+             0::numeric(14,2),
+             pa.amount
+        from public.payment_allocation pa
+        join public.installment i on i.id = pa.installment_id
+        join public.money_event e on e.id = pa.money_event_id
+       where i.student_id = p_student_id
+         and e.reverses_event_id is null
+         and not exists (select 1 from public.money_event r where r.reverses_event_id = e.id)
 
-    union all
+      union all
 
-    -- Discounts (non-cash reduction of what's owed).
-    select d.created_at,
-           'discount',
-           coalesce(d.reason, 'خصم'),
-           0::numeric(14,2),
-           d.computed_amount
-      from public.discount d
-     where d.student_id = p_student_id
+      -- Discounts (non-cash reduction of what's owed).
+      select d.created_at,
+             'discount',
+             coalesce(d.reason, 'خصم'),
+             0::numeric(14,2),
+             d.computed_amount
+        from public.discount d
+       where d.student_id = p_student_id
 
-    union all
+      union all
 
-    -- Adjustments / write-offs (reduce owed; reversal flips the sign).
-    select e.occurred_at,
-           'adjustment',
-           coalesce(e.notes, 'تسوية'),
-           case when e.reverses_event_id is null then 0::numeric(14,2) else e.amount end,
-           case when e.reverses_event_id is null then e.amount else 0::numeric(14,2) end
-      from public.money_event e
-     where e.student_id = p_student_id and e.event_type = 'adjustment'
+      -- Adjustments / write-offs (reduce owed; reversal flips the sign).
+      select e.occurred_at,
+             'adjustment',
+             coalesce(e.notes, 'تسوية'),
+             case when e.reverses_event_id is null then 0::numeric(14,2) else e.amount end,
+             case when e.reverses_event_id is null then e.amount else 0::numeric(14,2) end
+        from public.money_event e
+       where e.student_id = p_student_id and e.event_type = 'adjustment'
 
-    union all
+      union all
 
-    -- Refunds (money back to guardian; increases what's owed; reversal flips it).
-    select e.occurred_at,
-           'refund',
-           coalesce(e.notes, 'استرداد'),
-           case when e.reverses_event_id is null then e.amount else 0::numeric(14,2) end,
-           case when e.reverses_event_id is null then 0::numeric(14,2) else e.amount end
-      from public.money_event e
-     where e.student_id = p_student_id and e.event_type = 'refund'
-  )
-  select entry_date, entry_type, description, charge, credit,
-         sum(charge - credit) over (order by entry_date, entry_type
-                                     rows between unbounded preceding and current row)
-           as running_balance
-    from entries
-   order by entry_date, entry_type;
+      -- Refunds (money back to guardian; increases what's owed; reversal flips it).
+      select e.occurred_at,
+             'refund',
+             coalesce(e.notes, 'استرداد'),
+             case when e.reverses_event_id is null then e.amount else 0::numeric(14,2) end,
+             case when e.reverses_event_id is null then 0::numeric(14,2) else e.amount end
+        from public.money_event e
+       where e.student_id = p_student_id and e.event_type = 'refund'
+    )
+    select entry_date, entry_type, description, charge, credit,
+           sum(charge - credit) over (order by entry_date, entry_type
+                                       rows between unbounded preceding and current row)
+             as running_balance
+      from entries
+     order by entry_date, entry_type;
+end;
 $$;
 
 comment on function public.student_statement(uuid) is
   'Derived, ordered statement (charges/payments/discounts/refunds/adjustments) with running balance for a student.';
 
-grant execute on function public.student_statement(uuid) to authenticated;
+revoke execute on function public.student_statement(uuid) from public, anon;
+grant execute on function public.student_statement(uuid) to authenticated, service_role;

@@ -31,6 +31,9 @@ declare
   v_overdue_count        int;
   v_sms_credit_remaining int;
 begin
+  -- 0032a: refuse ids of another school (rpc-contracts §E0).
+  perform public.assert_target_school(p_school_id);
+
   -- Per-account + combined balance.
   select coalesce(jsonb_agg(jsonb_build_object(
            'account_id', a.id,
@@ -109,4 +112,5 @@ $$;
 comment on function public.dashboard_kpis(uuid) is
   'Derived admin-dashboard KPI bundle (balances, collected, outstanding, collection rate, expenses, net cash flow, overdue count, SMS credit) in Africa/Khartoum.';
 
-grant execute on function public.dashboard_kpis(uuid) to authenticated;
+revoke execute on function public.dashboard_kpis(uuid) from public, anon;
+grant execute on function public.dashboard_kpis(uuid) to authenticated, service_role;

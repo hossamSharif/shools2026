@@ -80,4 +80,6 @@ $$;
 comment on function public.consume_sms_credit(uuid, uuid, int, uuid) is
   'Atomic SMS credit decrement for a sent message; never negative, idempotent, DISPATCH_PAUSED-aware (US7).';
 
-grant execute on function public.consume_sms_credit(uuid, uuid, int, uuid) to authenticated;
+-- Hotfix 0032a: internal-only (worker / trigger). Not executable by authenticated.
+revoke execute on function public.consume_sms_credit(uuid, uuid, int, uuid) from public, anon, authenticated;
+grant execute on function public.consume_sms_credit(uuid, uuid, int, uuid) to service_role;
