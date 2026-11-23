@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain — 3 open (FR-004 multi-role model, FR-005 viewer future, FR-012 principal finance)
+- [x] No [NEEDS CLARIFICATION] markers remain (resolved in Clarifications, Session 2026-11-23)
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)

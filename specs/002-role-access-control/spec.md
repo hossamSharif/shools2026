@@ -23,6 +23,7 @@ Related features in this phase (referenced by number, specified separately):
 - Q: Does the principal see finance data by default? → A: School-level dashboard totals only, with no per-student or per-account detail. Full finance read-only access is an optional switch the school admin can turn on. The principal never has any finance write right.
 - Q: Is the viewer role still needed once principal exists? → A: Yes. Keep viewer unchanged as the finance-only read-only role (owner, auditor, board member). It can still be assigned to new users.
 - Q: Should principal and student affairs be scoped per stage (Primary / Middle / Secondary)? → A: Optionally. When assigning the role, the school admin may limit it to one or more stages. With no stages chosen, the role covers the whole school.
+- Q: How fast must deactivation and role/permission removal take effect? → A: Immediately, on the user's very next data request, including on already-open sessions.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -74,7 +75,7 @@ A school admin opens a users page for their school. They invite a staff member b
 
 1. **Given** a school admin in an active subscription, **When** they invite `teacher@example.com` with the teacher role, **Then** an invitation is sent, the user appears as "invited", and the invite expires after 7 days if unused.
 2. **Given** an invited teacher who accepted, **When** they log in, **Then** they land on a teacher-appropriate home page, finance menu items are absent, and navigating directly to a finance page shows a "not permitted" page in Arabic.
-3. **Given** an active user, **When** the school admin deactivates them, **Then** within 5 minutes the user can no longer read or write any school data, even with a session that was already open.
+3. **Given** an active user, **When** the school admin deactivates them, **Then** their very next data request is refused. They can no longer read or write any school data, even with a session that was already open.
 4. **Given** the school has exactly one active school admin, **When** anyone tries to deactivate that admin or remove their school-admin role, **Then** the action is refused with an explanation (a school is never left without an admin).
 5. **Given** any user, **When** they try to change their own roles or permissions, **Then** the action is refused.
 6. **Given** an accountant, viewer, teacher, student-affairs user or principal, **When** they try to invite, change roles of, or deactivate any user, **Then** the action is refused at the data layer.
@@ -112,7 +113,7 @@ The school admin opens a permissions screen that shows the product's default mat
 
 1. **Given** the default matrix, **When** the school admin turns on "teacher may view guardian contact for allocated students", **Then** teachers of that school (and only that school) can read guardian name and phone for students in their allocated sections, and nothing beyond that.
 2. **Given** any attempt to grant a permission not in the optional catalogue (for example finance view to teacher, student affairs, guardian or student, or user management to anyone except school admin), **Then** it is refused at the data layer.
-3. **Given** an optional permission is revoked, **When** an affected user next reads data, **Then** the revocation takes effect within 5 minutes.
+3. **Given** an optional permission is revoked, **When** an affected user next reads data, **Then** the revocation already applies to that request.
 
 ---
 
@@ -152,7 +153,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 ### Edge Cases
 
 - **Teacher with no allocations**: sees no academic or student data at all (not "everything", not an error). Feature 02 later adds allocations.
-- **Teacher allocation removed mid-year**: access to that section's data ends within 5 minutes. Data the teacher entered earlier (in later features) stays attributed to them.
+- **Teacher allocation removed mid-year**: access to that section's data ends with the teacher's next data request. Data the teacher entered earlier (in later features) stays attributed to them.
 - **Student transferred to another section**: teacher and guardian visibility follows the current enrollment. Teachers of the old section lose access to the student's new records.
 - **Student moves to another stage** (for example promoted from Primary 6 to Middle 1, or re-enrolled in a different stage): stage-scoped principal and student-affairs visibility follows the current enrollment. Staff scoped only to the old stage lose access to the student's records from the new enrollment onward.
 - **Student with no current enrollment** (for example withdrawn): visible only to school-wide principal and student-affairs users, the school admin, and the roles that see such students today (accountant, viewer). Stage-scoped staff do not see them.
@@ -217,7 +218,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 - **FR-015**: Relationship scope MUST be decided from the caller's own identity and stored relationships, never from values the caller supplies in a request.
 - **FR-016**: A teacher MUST see academic and student data only for the sections and subjects allocated to them for the current academic year. Until allocations exist (feature 02), a teacher MUST see no academic or student data at all.
 - **FR-017**: A guardian MUST see only students they are linked to. A student MUST see only their own record. The link records themselves are defined in feature 08 (guardian linking reuses the existing student guardian contact and does not duplicate it). Until then, links can be created only by test fixtures.
-- **FR-018**: When a relationship ends (allocation removed, enrollment moved, guardian unlinked, stage scope changed), access derived from it MUST end within 5 minutes.
+- **FR-018**: When a relationship ends (allocation removed, enrollment moved, guardian unlinked, stage scope changed), access derived from it MUST end with the user's next data request.
 - **FR-018a**: When assigning the `principal` or `student_affairs` role, the school admin MUST be able to limit it to one or more of the school's stages (Primary, Middle, Secondary). With no stages chosen, the role covers the whole school; all migrated and existing assignments start this way. A stage-scoped role's rights for students, academics, attendance, homework, exams and announcement audiences apply only to students currently enrolled, and sections and grades, in those stages. Users, settings, website CMS and the principal's finance visibility (FR-012) are not narrowed by stage. A user holding the same role for different stages sees the union of those stages. Stage scope is not available for other roles.
 
 **Enforcement**
@@ -234,7 +235,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 - **FR-025**: School admins MUST be able to list their school's users with roles and status (invited, active, deactivated), invite staff by email with one or more staff roles, change roles, deactivate and reactivate users.
 - **FR-026**: Invitations MUST expire after 7 days, be single-use, and be revocable before acceptance.
 - **FR-027**: The system MUST prevent removing or deactivating the last active school admin, and MUST prevent any user from changing their own roles or permissions.
-- **FR-028**: A deactivated user MUST lose all data access within 5 minutes, including through sessions opened before deactivation. Data they created stays attributed to them.
+- **FR-028**: A deactivated user MUST lose all data access from their very next data request, including through sessions opened before deactivation. Role, permission and stage-scope removals likewise take effect on the next request. Screens may need a refresh to update menus, but the data layer refuses at once. Data they created stays attributed to them.
 - **FR-029**: Staff login MUST refuse identities whose only roles are portal roles (guardian, student). Portal login is feature 08.
 - **FR-030**: All user-management screens and messages MUST be Arabic and right-to-left, with dates shown in Africa/Khartoum time.
 
@@ -270,7 +271,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 - **SC-003**: 100% of existing Playwright and Gauntlet checks from spec 001 pass unchanged after migration. Existing users need 0 steps from the school to keep working.
 - **SC-004**: An authenticated teacher querying their own school's money events directly gets 0 rows, in every subscription state.
 - **SC-005**: A school admin can invite a staff member and assign roles in under 2 minutes, and the invited person can be signed in and working in under 5 minutes after opening the invitation.
-- **SC-006**: Deactivation, role removal and permission revocation take full effect in at most 5 minutes, including on already-open sessions.
+- **SC-006**: Deactivation, role removal, stage-scope narrowing and permission revocation take effect on 100% of the affected user's next data requests (0 requests succeed after the change commits), including on already-open sessions.
 - **SC-007**: 100% of role, permission and user-status changes produce exactly one audit entry with actor, target, before/after and timestamp, and 0 audit entries can be edited or deleted.
 - **SC-008**: Accountant daily tasks (record payment, print receipt, view statement and aging) take no longer than before this feature, measured on a school with 2,000 students.
 - **SC-009**: Attempts to grant any never-grantable permission (FR-011) are refused 100% of the time, whether made through screens or direct API calls.
@@ -283,7 +284,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 - A teacher who is also a parent at the school uses a separate portal identity for their child (FR-004 forbids combining portal and staff roles on one account).
 - Homeroom-type duties ("teacher who is also the homeroom coordinator") are modelled as allocations in feature 02, not as a separate role.
 - Existing Phase 1 users are migrated one-to-one: each keeps its single current role as its only role assignment.
-- The 5-minute limit for revocations is acceptable given school operating patterns. A shorter limit can be set during planning if it costs little.
+- Access is resolved from the stored roles, permissions and relationships on every data request (the Phase 1 data layer already resolves school and role this way), so immediate revocation does not need a separate session-kill mechanism.
 - Scale target: ~100 schools, up to ~2,000 students and ~150 staff users per school. Access checks must not noticeably slow finance screens at this scale.
 - No WhatsApp, online payment gateway or AI features are involved.
 
