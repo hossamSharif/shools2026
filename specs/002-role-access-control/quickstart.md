@@ -11,19 +11,23 @@ needs owner review of the SQL before apply.** Ship them together in one release,
 users screens are enabled (no invitation can exist before then, so the intermediate states
 expose nothing new).
 
-| # | File | Content |
-|---|---|---|
-| 0033 | `0033_user_role_values.sql` | add enum values (own txn) |
-| 0034 | `0034_role_model.sql` | `user.status`, `role_assignment(_stage)`, triggers, backfill from `user.role` |
-| 0035 | `0035_permission_catalogue.sql` | `permission`, `role_permission_default`, `optional_permission`, `school_role_permission` + seeds from contracts/access-matrix.md |
-| 0036 | `0036_access_helpers.sql` | `current_school_id()` v2, `has_perm`, `perm_scope`, `can_read_student`, `can_write_student`, `teacher_section_ids` (empty), `portal_student_ids`, `assert_perm`, `my_access` |
-| 0037 | `0037_portal_link.sql` | minimal link table (service-role writes only) |
-| 0038 | `0038_invitation_access_audit.sql` | `invitation`, `access_audit_entry` + immutability trigger |
-| 0039 | `0039_user_management_functions.sql` | §B–D functions of contracts/rpc-contracts.md |
-| 0040 | `0040_rewrite_tenant_policies.sql` | drop every Phase 1 `*_tenant_*` policy and create the role-aware ones (data-model §10), storage policies |
-| 0041 | `0041_harden_derived_and_money_functions.sql` | §E permission checks (**money migration**) |
-| 0042 | `0042_notification_recipients.sql` | emitters target `finance.read` holders |
-| 0043 | `0043_policy_audit_function.sql` | `audit_access_policies()` |
+| # | File | Content | Story |
+|---|---|---|---|
+| 0033 | `0033_user_role_values.sql` | add enum values (own txn) | foundational |
+| 0034 | `0034_role_model.sql` | `user.status`, `role_assignment(_stage)`, triggers, backfill from `user.role` | foundational |
+| 0035 | `0035_permission_catalogue.sql` | `permission`, `role_permission_default`, `optional_permission`, `school_role_permission` + seeds from contracts/access-matrix.md | foundational |
+| 0036 | `0036_portal_link.sql` | minimal link table (service-role writes only); created before the helpers that read it | foundational |
+| 0037 | `0037_access_helpers.sql` | `current_school_id()` v2, `has_perm`, `perm_scope`, `can_read_student`, `can_write_student`, `teacher_section_ids` (empty), `portal_student_ids`, `assert_perm`, `my_access` | foundational |
+| 0038 | `0038_rewrite_tenant_policies.sql` | drop every Phase 1 `*_tenant_*` policy and create the role-aware ones (data-model §10), storage policies | US1 |
+| 0039 | `0039_harden_derived_and_money_functions.sql` | §E permission checks (**money migration**) | US1 |
+| 0040 | `0040_notification_recipients.sql` | emitters target `finance.read` holders | US1 |
+| 0041 | `0041_policy_audit_function.sql` | `audit_access_policies()` | US1 |
+| 0042 | `0042_manual_sms_authorization.sql` | `authorize_manual_sms()` | US2 |
+| 0043 | `0043_invitation_access_audit.sql` | `invitation`, `access_audit_entry` + immutability trigger | US3 |
+| 0044 | `0044_user_management_functions.sql` | `list_school_users`, `list_invitations`, invitation lifecycle, `set_user_roles`, `deactivate_user`, `reactivate_user`, `expire_invitations` | US3 |
+| 0045 | `0045_new_role_functions.sql` | `teacher_roster()`, `register_student()` | US4 |
+| 0046 | `0046_optional_permission_functions.sql` | `optional_permission_matrix()`, `set_optional_permission()` | US5 |
+| 0047 | `0047_access_audit_read.sql` | `list_access_audit()` | US6 |
 
 Then:
 - `generate_typescript_types` → `packages/database/src/types/database.ts` (no hand edits).
@@ -127,7 +131,7 @@ Unchanged and required, because money functions gained a check:
 ### 4.7 Performance (SC-008)
 On the 2,000-student seed, run `EXPLAIN (ANALYZE, BUFFERS)` through Supabase MCP as the
 accountant JWT for `student_statement`, `receivables_aging`, `dashboard_kpis`,
-`student_directory` and the payments list, before and after 0040/0041. p95 regression must be
+`student_directory` and the payments list, before and after 0038/0039. p95 regression must be
 ≤10%. The `has_perm` init-plan must appear once per statement.
 
 ### 4.8 New Playwright specs (Article XIII)

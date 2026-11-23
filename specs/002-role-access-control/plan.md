@@ -69,7 +69,7 @@ follows FR-003)._
 | IX — Arabic-RTL & SDG | Arabic RTL everywhere | New screens, emails (invite template), errors and the forbidden page are Arabic RTL. Role and stage labels are in Arabic. | PASS |
 | X — The Gauntlet | Live verification; reconciliation; receipt concurrency; forward-only | Money functions are touched, so the full Gauntlet re-runs unchanged (quickstart §4.6). New direct-query matrix and revocation tests run on a real Supabase. Playwright covers the new flows. Migrations are forward-only. | PASS |
 | XI — Type Safety & Validation | strict TS; Zod at boundaries; shared types SoT | Zod schemas for every new RPC and worker body are in `@erp/shared/schemas/access.ts`. `ACCESS_EXPECTATIONS` and the permission keys live in `@erp/shared/access`. DB types are regenerated through MCP. | PASS |
-| XII — Supabase MCP for DB | MCP-only DB work; owner review of RLS/money migrations | All 11 migrations go through `apply_migration`. **Every one is flagged for owner review** (all touch RLS and 0041 touches money functions). Types come from `generate_typescript_types`, plus `get_advisors` checks. | PASS (review gate applies) |
+| XII — Supabase MCP for DB | MCP-only DB work; owner review of RLS/money migrations | All 15 migrations (0033–0047, listed in quickstart §1) go through `apply_migration`. **Every one is flagged for owner review** (all touch RLS and 0039 touches money functions). Types come from `generate_typescript_types`, plus `get_advisors` checks. | PASS (review gate applies) |
 | XIII — Playwright | Only browser tool; RTL assertions | New specs (invite/deactivate, switches, audit, portal login refusal) use Playwright with RTL assertions. The existing suite runs unchanged. | PASS |
 
 **Security & Secrets**: no new secrets. `APP_URL` is config, not a secret. The service key
@@ -115,17 +115,13 @@ packages/
 │
 ├── database/
 │   ├── migrations/
-│   │   ├── 0033_user_role_values.sql
-│   │   ├── 0034_role_model.sql
-│   │   ├── 0035_permission_catalogue.sql
-│   │   ├── 0036_access_helpers.sql
-│   │   ├── 0037_portal_link.sql
-│   │   ├── 0038_invitation_access_audit.sql
-│   │   ├── 0039_user_management_functions.sql
-│   │   ├── 0040_rewrite_tenant_policies.sql
-│   │   ├── 0041_harden_derived_and_money_functions.sql
-│   │   ├── 0042_notification_recipients.sql
-│   │   ├── 0043_policy_audit_function.sql
+│   │   ├── 0033_user_role_values.sql … 0037_access_helpers.sql   # foundational
+│   │   ├── 0038_rewrite_tenant_policies.sql … 0041_policy_audit_function.sql  # US1
+│   │   ├── 0042_manual_sms_authorization.sql                    # US2
+│   │   ├── 0043_invitation_access_audit.sql, 0044_user_management_functions.sql  # US3
+│   │   ├── 0045_new_role_functions.sql                          # US4
+│   │   ├── 0046_optional_permission_functions.sql               # US5
+│   │   ├── 0047_access_audit_read.sql                           # US6
 │   │   └── _templates/tenant_rls.sql          # UPDATED: role-aware template (no signed-in-only policy)
 │   ├── functions/                 # UPDATED sources for §E functions; NEW access_helpers.sql, user_management.sql
 │   ├── seeds/test_access_fixture.sql          # NEW
