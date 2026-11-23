@@ -69,6 +69,16 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] T008 Configure error handling and logging infrastructure
 - [ ] T009 Setup environment configuration management
 
+Constitution-driven foundational tasks (v1.2.0 — include those that apply):
+
+- [ ] TXXX Per new table: `school_id`, default-deny RLS encoding role × relationship scope
+  (Art. IV, XIV), explicit GRANTs — no policy keyed only on `authenticated`
+- [ ] TXXX Audit triggers recording who/when/old → new for marks, attendance, results (Art. XV)
+- [ ] TXXX Private tenant-scoped storage bucket + short-lived signed-URL access (Art. XVI)
+- [ ] TXXX Anonymous intake function/endpoint with Zod validation, rate limit, spam control;
+  no `anon` grants on tenant tables (Art. XVII)
+- [ ] TXXX Route any new outbound SMS through the shared credit + dispatch path (Art. VII)
+
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
 ---
@@ -155,6 +165,10 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX Performance optimization across all stories
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
+- [ ] TXXX RLS role-matrix tests: each role/relationship denied case proven (Art. XIV)
+- [ ] TXXX Publish-gate and locked-mark correction tests (Art. XV)
+- [ ] TXXX Playwright: guardian/student pages at 360px + page-weight budget on throttled
+  slow-3G profile (Art. XVIII)
 - [ ] TXXX Run quickstart.md validation
 
 ---
