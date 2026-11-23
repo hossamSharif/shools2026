@@ -21,6 +21,7 @@ Related features in this phase (referenced by number, specified separately):
 
 - Q: Multi-role users — several roles per user, or one role plus extra permissions? → A: Several staff roles per user; effective rights are the union of the roles. Per-role optional switches (FR-010) still apply. There are no per-user extra permissions.
 - Q: Does the principal see finance data by default? → A: School-level dashboard totals only, with no per-student or per-account detail. Full finance read-only access is an optional switch the school admin can turn on. The principal never has any finance write right.
+- Q: Is the viewer role still needed once principal exists? → A: Yes. Keep viewer unchanged as the finance-only read-only role (owner, auditor, board member). It can still be assigned to new users.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -173,7 +174,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 - **FR-002**: `school_admin` MUST keep full access to every module of its own school, acting as the school's system administrator. It is the only school role that may manage users, roles, optional permissions and school settings.
 - **FR-003**: `accountant` and `viewer` MUST keep exactly their Phase 1 permissions (FR-005 and FR-006 of spec 001), including every finance read and write they have today and nothing new by default.
 - **FR-004**: A staff user MUST be able to hold one or more staff roles at the same time. Their effective rights are the union of those roles' rights, including each role's optional permissions as set by the school (FR-010). Rights are never granted to an individual user outside their roles. Every user still belongs to exactly one school and has at least one role while active. The portal roles (`guardian`, `student`) MUST NOT be combined with staff roles on the same account.
-- **FR-005**: The existing `viewer` role [NEEDS CLARIFICATION: is `viewer` still needed once `principal` exists — keep it as-is, retire it by migrating viewers to principal, or keep it but deprecate it for new users?]. Whatever the answer, existing viewer users MUST keep their current access without any action from the school.
+- **FR-005**: The existing `viewer` role MUST stay as a finance-only, read-only role (for example an owner, external auditor or board member) with exactly its Phase 1 rights. It MUST remain assignable to new users. Existing viewer users keep their current access with no action from the school. Viewer gains no access to the academic modules by default.
 
 **Access matrix**
 
