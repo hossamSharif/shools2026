@@ -31,9 +31,12 @@ the worker (the only holder of the service key). A service-role-only `audit_acce
 and a table-driven direct-query matrix test enforce FR-034/035 on every change. The Phase 1
 Playwright suite and the Gauntlet run unchanged.
 
-Research also found a **real Phase 1 gap**: the money RPCs check school but not role, so a
-viewer can post a payment through the API today. Closing it is part of FR-021, and the
-matrix test covers it (research R0).
+Research also found **real Phase 1 gaps**. The money RPCs check school but not role, so a viewer
+can post a payment through the API today. Worse, several finance functions do not check the
+target's school and some are still executable by `anon`, so School B's dashboard, statements
+and aging can be read by passing B's ids. A standalone hotfix migration `0032a` (rpc-contracts
+§E0) closes the cross-tenant part **ahead of this feature**. The permission checks follow in
+0039. The matrix test and the policy audit cover both (research R0).
 
 ## Technical Context
 
@@ -48,9 +51,7 @@ matrix test covers it (research R0).
 **Scale/Scope**: ~100 schools, ≤2,000 students and ≤150 staff per school; 9 roles; ~20 enforced permission keys plus not-yet-enforced module keys; 7 optional switches; ~22 existing tenant data sets and ~14 derived functions brought under the matrix.
 
 _No open NEEDS CLARIFICATION. All unknowns are resolved in [research.md](./research.md) R0–R14.
-One spec note is carried to `/speckit-analyze` (research R4: the accountant's real Phase 1
-student/structure write rights versus the "view (as today)" shorthand in FR-007; the plan
-follows FR-003)._
+The accountant baseline (research R4) is now reflected in spec FR-007 (footnote ¹)._
 
 ## Constitution Check
 
@@ -61,7 +62,7 @@ follows FR-003)._
 | I — Financial Integrity | Money changes only in single-txn DB functions; NUMERIC; gapless receipts; idempotency | No money rows are written by this feature (FR-022). Money RPCs gain only a leading `assert_perm('finance.write')`, and their transaction bodies are untouched. Student-affairs enrollment uses the existing enrollment trigger path. | PASS |
 | II — Derived Balances | Never store balances | No balance storage. Masking happens at output (`student_directory`, `dashboard_kpis`); computation is unchanged. | PASS |
 | III — Append-only Ledger | Immutable financial rows | Ledger is untouched. `access_audit_entry` follows the same rule (no update/delete; immutability trigger). | PASS |
-| IV — Tenant Isolation in DB | default-deny RLS + `school_id` + GRANTs; super-admin wall-off; new-table checklist | This feature *strengthens* Article IV: every tenant policy now needs an explicit permission key, and the policy audit enforces the new-table checklist on every change. Super-admin has no key and no policy on finance or access-audit tables. Every new table: `school_id` (tenant ones), FORCE RLS, explicit GRANTs, no direct writes for `authenticated`. | PASS |
+| IV — Tenant Isolation in DB | default-deny RLS + `school_id` + GRANTs; super-admin wall-off; new-table checklist | Phase 1 definer functions that leak across schools (research R0) are fixed first by hotfix `0032a`, and the policy audit then refuses any definer function executable by `anon`/PUBLIC. This feature *strengthens* Article IV: every tenant policy now needs an explicit permission key, and the policy audit enforces the new-table checklist on every change. Super-admin has no key and no policy on finance or access-audit tables. Every new table: `school_id` (tenant ones), FORCE RLS, explicit GRANTs, no direct writes for `authenticated`. | PASS |
 | V — Immutable Audit Trail | Who/what/when, immutable | `access_audit_entry` covers every invitation, role, stage, status and switch change (FR-031). It is written in the same txn, exactly one per change, and immutable for every role including service_role. | PASS |
 | VI — Service Boundaries | Money logic in Postgres; Next.js = UI/light CRUD; worker = long-running; SMS behind interface | All authorization and user-management logic is in Postgres. Next.js only calls RPCs and hides UI. The worker gains invitation send/accept endpoints because it is already the only holder of the service key. It decides nothing itself (see Complexity Tracking). The SMS path is unchanged apart from an authorization pre-check. | PASS (justified extension) |
 | VII — Credit & Messaging Integrity | Atomic send+decrement, segment count, logged | Unchanged. `authorize_manual_sms` runs before dispatch. The SMS log becomes finance-tier read. | PASS |
@@ -69,7 +70,7 @@ follows FR-003)._
 | IX — Arabic-RTL & SDG | Arabic RTL everywhere | New screens, emails (invite template), errors and the forbidden page are Arabic RTL. Role and stage labels are in Arabic. | PASS |
 | X — The Gauntlet | Live verification; reconciliation; receipt concurrency; forward-only | Money functions are touched, so the full Gauntlet re-runs unchanged (quickstart §4.6). New direct-query matrix and revocation tests run on a real Supabase. Playwright covers the new flows. Migrations are forward-only. | PASS |
 | XI — Type Safety & Validation | strict TS; Zod at boundaries; shared types SoT | Zod schemas for every new RPC and worker body are in `@erp/shared/schemas/access.ts`. `ACCESS_EXPECTATIONS` and the permission keys live in `@erp/shared/access`. DB types are regenerated through MCP. | PASS |
-| XII — Supabase MCP for DB | MCP-only DB work; owner review of RLS/money migrations | All 15 migrations (0033–0047, listed in quickstart §1) go through `apply_migration`. **Every one is flagged for owner review** (all touch RLS and 0039 touches money functions). Types come from `generate_typescript_types`, plus `get_advisors` checks. | PASS (review gate applies) |
+| XII — Supabase MCP for DB | MCP-only DB work; owner review of RLS/money migrations | All 16 migrations (hotfix 0032a plus 0033–0047, listed in quickstart §1) go through `apply_migration`. **Every one is flagged for owner review** (all touch RLS and 0039 touches money functions). Types come from `generate_typescript_types`, plus `get_advisors` checks. | PASS (review gate applies) |
 | XIII — Playwright | Only browser tool; RTL assertions | New specs (invite/deactivate, switches, audit, portal login refusal) use Playwright with RTL assertions. The existing suite runs unchanged. | PASS |
 
 **Security & Secrets**: no new secrets. `APP_URL` is config, not a secret. The service key
@@ -115,6 +116,7 @@ packages/
 │
 ├── database/
 │   ├── migrations/
+│   │   ├── 0032a_harden_finance_definer_exposure.sql             # hotfix, ships first
 │   │   ├── 0033_user_role_values.sql … 0037_access_helpers.sql   # foundational
 │   │   ├── 0038_rewrite_tenant_policies.sql … 0041_policy_audit_function.sql  # US1
 │   │   ├── 0042_manual_sms_authorization.sql                    # US2
@@ -124,10 +126,11 @@ packages/
 │   │   ├── 0047_access_audit_read.sql                           # US6
 │   │   └── _templates/tenant_rls.sql          # UPDATED: role-aware template (no signed-in-only policy)
 │   ├── functions/                 # UPDATED sources for §E functions; NEW access_helpers.sql, user_management.sql
-│   ├── seeds/test_access_fixture.sql          # NEW
 │   └── src/
-│       ├── access/                # NEW Vitest: matrix.test.ts, revocation.test.ts, user-management.test.ts,
-│       │                          #   audit.test.ts, policy-audit.test.ts, catalogue.test.ts
+│       ├── access/                # NEW: fixture.ts, run-matrix.ts and Vitest suites (matrix, foundation,
+│       │                          #   subscription-states, policy-audit, catalogue, phase1-baseline,
+│       │                          #   migration-backfill, user-management, revocation, new-roles,
+│       │                          #   optional-permissions, audit, portal, definer-exposure)
 │       ├── test-helpers/supabase.ts           # + createAuthedStaff(); createAuthedUser unchanged
 │       └── types/database.ts      # regenerated via MCP
 │

@@ -96,8 +96,8 @@ A principal, a student-affairs officer and a teacher each sign in and can do exa
 2. **Given** a student-affairs user, **When** they try to record any money event, apply a discount, or edit a fee structure, **Then** the action is refused.
 3. **Given** a teacher, **When** they try to create, edit or delete a student, section, enrollment or academic year, **Then** the action is refused.
 4. **Given** a principal, **When** they open student and enrollment data, **Then** they can view all students of the school, and the dashboard shows them school-level finance totals only.
-6. **Given** a principal without the optional full-finance permission, **When** they query a student statement, aging rows, account balances or money events directly, **Then** zero rows are returned. **When** the school admin turns that permission on, **Then** the same queries return what a viewer sees, and every finance write is still refused.
-5. **Given** a user who holds both the teacher and student-affairs roles, **When** they act, **Then** they can do whatever either role allows and nothing that neither allows. For example, they can edit student records (student affairs) but still cannot read any finance data.
+5. **Given** a principal without the optional full-finance permission, **When** they query a student statement, aging rows, account balances or money events directly, **Then** zero rows are returned. **When** the school admin turns that permission on, **Then** the same queries return what a viewer sees, and every finance write is still refused.
+6. **Given** a user who holds both the teacher and student-affairs roles, **When** they act, **Then** they can do whatever either role allows and nothing that neither allows. For example, they can edit student records (student affairs) but still cannot read any finance data.
 
 ---
 
@@ -158,10 +158,10 @@ The guardian and student roles exist in the role model and in the matrix, with r
 - **Student moves to another stage** (for example promoted from Primary 6 to Middle 1, or re-enrolled in a different stage): stage-scoped principal and student-affairs visibility follows the current enrollment. Staff scoped only to the old stage lose access to the student's records from the new enrollment onward.
 - **Student with no current enrollment** (for example withdrawn): visible only to school-wide principal and student-affairs users, the school admin, and the roles that see such students today (accountant, viewer). Stage-scoped staff do not see them.
 - **Guardian linked to several students (siblings)**: sees each linked student, and nothing of non-linked siblings or classmates.
-- **Multi-role user loses one role**: keeps only the permissions of the remaining roles. Losing the last role leaves the user with no school access (treated like deactivated).
+- **Multi-role user loses one role**: keeps only the permissions of the remaining roles. Removing a user's last role is done by deactivating them, which leaves the user with no school access.
 - **User whose only role is reserved (guardian/student) appears on the staff users page**: shown as portal users, not editable as staff in this feature.
 - **Last school admin**: cannot be deactivated or demoted by anyone in the school, including themselves. Only the super-admin can replace a school's admin (existing tenant-management power).
-- **Grace and locked subscription**: inviting users, assigning roles and granting optional permissions are writes and are blocked in grace (read-only) and locked (view/export only), like every write. **Deactivating a user and revoking roles or permissions stay allowed in every state**, because they only reduce access and a school must be able to remove a departed employee at any time. Every such change is still audited.
+- **Grace and locked subscription**: inviting users, assigning roles and granting optional permissions are writes and are blocked in grace (read-only) and locked (view/export only), like every write. **Deactivating a user and revoking roles or permissions stay allowed in every state**, because they only reduce access and a school must be able to remove a departed employee at any time. Every such change is still audited. An invitation sent while the subscription was active can still be accepted after it moves to grace or locked: the grant was checked and audited when it was sent, and the admin can revoke a pending invitation in any state.
 - **Super-admin**: keeps the existing user-directory powers (create a school's first admin, support actions), still has zero access to any school financial data, and cannot grant itself any school role.
 - **Derived read functions**: statements, aging, KPIs, student directory, profile and balance helpers apply the same role and relationship checks as the underlying data, so they cannot be used to get around the matrix.
 - **Notifications and SMS log**: in-app notifications about money (payments, overdue) are visible only to finance-permitted roles. The SMS log (it holds guardian phones and amounts owed) is finance-tier data.
@@ -188,7 +188,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
   | Module | school_admin | principal | student_affairs | teacher | accountant | viewer | guardian | student |
   |---|---|---|---|---|---|---|---|---|
   | Finance | all (as today) | view school-level totals only (FR-012) | — | — | view, create, edit (as today) | view (as today) | view own linked students' statement summary | — |
-  | Students (identity, enrollment, status) | all | view | view, create, edit | view (scoped, limited fields) | view (as today) | view (as today) | view (linked) | view (self) |
+  | Students (identity, enrollment, status) | all | view | view, create, edit | view (scoped, limited fields) | view, create, edit (as today)¹ | view (as today) | view (linked) | view (self) |
   | Academics (subjects, timetable, allocations) | all | view, create, edit, approve | view | view (scoped) | — | — | view (linked) | view (self) |
   | Attendance | all | view, approve | view, create, edit | view, create, edit (scoped) | — | — | view (linked) | view (self) |
   | Homework | all | view | view | view, create, edit, publish (scoped) | — | — | view (linked, published) | view (self, published) |
@@ -197,6 +197,8 @@ The guardian and student roles exist in the role model and in the matrix, with r
   | Website CMS | all | view, create, edit, approve, publish | view, create, edit | — | — | — | — | — |
   | Settings | all | view | — | — | — | — | — | — |
   | Users | all | view | — | — | — | — | — | — |
+
+  ¹ The accountant keeps every Phase 1 right as built (FR-003): creating and editing students, enrolling them, and creating academic years, sections, accounts and fee structures. Deleting students, settings and users stay school-admin only.
 
 - **FR-008**: "Students, limited fields" for teachers MUST mean: name, photo, grade, section, enrollment status. It MUST exclude guardian contact (unless the optional permission in FR-010 is on), any financial field or status, and any internal notes.
 - **FR-009**: Rights MUST combine as the union of the user's roles (FR-004), intersected with relationship scope. No combination may produce a right that is in the never-grantable set (FR-011).
@@ -209,7 +211,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
   - Principal: create and edit academic years and sections (default off).
   - Viewer: export reports (default per current viewer behaviour).
 - **FR-011**: These MUST be impossible to grant through any screen or direct API call (the never-grantable set): any finance write to any role other than school admin and accountant; any finance read to teacher, student affairs (beyond the FR-010 indicator), guardian or student (beyond the FR-014 own-statement summary); user or role management to any role other than school admin; widening a guardian's or student's scope beyond their linked students or self; any access across schools.
-- **FR-012**: By default the principal MUST see only school-level finance totals, the aggregate figures on the dashboard (for example total billed, collected, outstanding, collection rate). They MUST NOT see any per-student, per-installment, per-account or per-receipt detail, statements, aging rows, money events, the SMS log or finance audit entries. When the school admin turns on the optional "principal: full finance read-only" permission (FR-010), the principal gets the same finance read rights as viewer. In every case the principal MUST NOT have any finance write right.
+- **FR-012**: By default the principal MUST see only school-level finance totals, the aggregate figures on the dashboard (for example collected this month and this year, total outstanding, collection rate, number of overdue students). They MUST NOT see any per-student, per-installment, per-account or per-receipt detail, statements, aging rows, money events, the SMS log or finance audit entries. When the school admin turns on the optional "principal: full finance read-only" permission (FR-010), the principal gets the same finance read rights as viewer. In every case the principal MUST NOT have any finance write right.
 - **FR-013**: Money events, accounts, account balances, installments, payment allocations, receipts and receipt numbers, discounts, statements, aging, dashboard money figures, the SMS message log, SMS credit, and finance audit entries MUST be readable only by school admin, accountant and viewer. The principal can read them only as FR-012 allows: school-level totals by default, full read-only when the optional permission is on.
 - **FR-014**: A guardian's only finance visibility MUST be the derived statement summary (amount due, paid, remaining, upcoming installments) of their own linked students, served by the existing derived functions. It MUST NOT include raw money events, account names or balances, or any other student's data. This right is defined here and becomes usable in feature 08.
 
@@ -273,7 +275,7 @@ The guardian and student roles exist in the role model and in the matrix, with r
 - **SC-005**: A school admin can invite a staff member and assign roles in under 2 minutes, and the invited person can be signed in and working in under 5 minutes after opening the invitation.
 - **SC-006**: Deactivation, role removal, stage-scope narrowing and permission revocation take effect on 100% of the affected user's next data requests (0 requests succeed after the change commits), including on already-open sessions.
 - **SC-007**: 100% of role, permission and user-status changes produce exactly one audit entry with actor, target, before/after and timestamp, and 0 audit entries can be edited or deleted.
-- **SC-008**: Accountant daily tasks (record payment, print receipt, view statement and aging) take no longer than before this feature, measured on a school with 2,000 students.
+- **SC-008**: Accountant daily tasks (record payment, print receipt, view statement and aging) take no longer than before this feature: p95 response time of each within 10% of the pre-feature baseline (run-to-run noise), measured on a school with 2,000 students.
 - **SC-009**: Attempts to grant any never-grantable permission (FR-011) are refused 100% of the time, whether made through screens or direct API calls.
 
 ## Assumptions

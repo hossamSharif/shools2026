@@ -83,6 +83,10 @@ defaults.
 | `teacher_roster` | `students.read_limited` *(rel)* (+ guardian contact with switch) | — | allocated only | FORBIDDEN |
 | money RPCs (`apply_fee_payment`, `record_*`, `apply_discount`, `reverse_event`, `record_opening_balance`) | — | `finance.write` + `assert_writes_allowed` | FORBIDDEN | FORBIDDEN |
 | `topup_sms_credit` | — | super-admin (unchanged) | FORBIDDEN | FORBIDDEN |
+| `sms_credit_balance` | `finance.read` (+ own school) | — | FORBIDDEN | FORBIDDEN |
+| `consume_sms_credit`, `check_low_sms_credit`, `generate_installments` | not executable by `authenticated` (worker / trigger only) | — | no EXECUTE | no EXECUTE |
+
+Every function above also refuses ids from another school with `FORBIDDEN_SCHOOL` (rpc-contracts §E0). The matrix test passes School B ids as a School A accountant to each one.
 
 **Totals subset of `dashboard_kpis`** (principal default): `collected_month`, `collected_year`,
 `outstanding`, `collection_rate`, `overdue_count`. These are the existing school-level

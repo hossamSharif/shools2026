@@ -141,6 +141,16 @@ const SetOptionalPermissionInput = z.object({
 });
 ```
 
+### `superadmin_set_school_admin(p_user_id uuid) → void`
+**Super-admin only** (`current_is_super_admin()`, else `FORBIDDEN_PERMISSION`). This is the
+spec's "only the super-admin can replace a school's admin" path, and it keeps FR-024 (the
+super-admin still gets no school data). It adds the `school_admin` assignment to an existing
+staff user of any school, and sets `status = 'active'` if they were deactivated. It never adds
+a role to the super-admin itself, because the target must have a `school_id`. It is not
+write-gated: a locked school must still be able to get a working admin. Audit `role_added`
+(and `user_reactivated` if applicable) in the target school, actor = super-admin. The
+super-admin still cannot read that audit (no policy).
+
 ### `expire_invitations() → int`
 **service_role only** (worker daily cron). `pending` rows past `expires_at` become `expired`.
 Audit `invitation_expired` (actor NULL). Returns the count.
@@ -173,9 +183,39 @@ calls it **as the requesting user** before the unchanged dispatch + `consume_sms
 
 ---
 
+## E0. Hotfix: definer exposure in Phase 1 (`0032a_harden_finance_definer_exposure.sql`)
+
+Found during `/speckit-analyze` by reading the repo source; to be confirmed on the live
+database with Supabase MCP (`get_advisors`, plus read-only `execute_sql` on
+`information_schema.routine_privileges`) before writing the migration. It ships **on its own,
+ahead of this feature**, and changes nothing for legitimate same-school callers.
+
+1. **EXECUTE still granted to PUBLIC (hence `anon`)**: `dashboard_kpis`, `student_statement`,
+   `receivables_aging`, `consume_sms_credit`, `sms_credit_balance`, `mark_notification_read`.
+   Fix: `revoke execute … from public, anon`.
+2. **No check that the target belongs to the caller's school**: `dashboard_kpis(p_school_id)`,
+   `student_statement(p_student_id)`, `receivables_aging(p_school_id, …)`,
+   `account_balance(p_account_id)`, `student_balance(p_student_id)`,
+   `installment_running_balance(p_installment_id)`, `sms_credit_balance(p_school_id)`. A signed-in
+   user of School A can read School B's figures by passing B's ids. Fix: the first statement
+   resolves the target's `school_id` and raises `FORBIDDEN_SCHOOL` (the existing Phase 1 code and
+   Arabic hint) unless it equals `current_school_id()`, or the caller is `service_role` (worker
+   and nested definer calls run as owner with the caller's JWT, so for them the check passes
+   whenever the outer call passed).
+3. **Internal-only functions callable by `authenticated`**: `consume_sms_credit` (debits any
+   school's credit given a message id), `check_low_sms_credit` (emits notifications for any
+   school), `generate_installments(p_enrollment_id)` (writes installments for any school's
+   enrollment). Their only legitimate callers are the worker (service role) and the
+   `enrollment_generate_installments` trigger (definer). Fix: `revoke execute … from
+   authenticated` and `grant execute … to service_role`. Phase 1 tests already call them
+   through the service client (`us9-notifications.spec.ts`), so nothing breaks.
+
+**Money migration ⇒ owner review, then the Gauntlet re-run** (reconciliation, receipt
+concurrency, idempotency, the `consume_sms_credit` credit tests).
+
 ## E. Changes to existing Phase 1 functions (signatures unchanged)
 
-Each gets a permission check as its first statement after the existing school check. The
+Each gets a permission check as its first statement after the school check. The school check is the existing one, or the one added by E0. **Every exposed function must check both the caller's permission and that the target id belongs to `current_school_id()`, because a permission alone is not tenant-scoped.** The
 callers and the outputs seen by school_admin/accountant/viewer are unchanged (US2). **These
 are money migrations: owner review, then the Gauntlet re-run (reconciliation, receipt
 concurrency, idempotency, write gating).**
@@ -190,6 +230,8 @@ concurrency, idempotency, write gating).**
 | `generate_installments` (trigger) | unchanged; it runs as definer from the enrollment insert, which is already gated by enrollment RLS |
 | `emit_notification` callers (`emit_notifications.sql`) | recipients come from `role_assignment` holders of `finance.read` instead of `user.role in (...)`; same people for Phase 1 schools |
 | `current_school_id()` | redefined as status- and assignment-aware (data-model §9) |
+| `sms_credit_balance` | `assert_perm('finance.read')` after the E0 school check; internal calls from `dashboard_kpis` happen only on the full-payload path |
+| `consume_sms_credit`, `check_low_sms_credit`, `generate_installments` | not exposed (service_role / trigger only after E0); no permission check needed |
 
 `has_perm` returns true for a `service_role` JWT, so worker calls (reminder cron, dispatch)
 behave exactly as today.
@@ -201,4 +243,5 @@ behave exactly as today.
 ### `audit_access_policies() → table(object text, kind text, detail text)`
 **service_role only.** It returns one row per violation of research R11. The test asserts
 zero rows. `kind` ∈ `rls_disabled`, `rls_not_forced`, `no_policy`, `signed_in_only_policy`,
-`role_column_authz`, `unreviewed_definer`, `catalogue_never_grantable`.
+`role_column_authz`, `unreviewed_definer`, `definer_public_execute` (a SECURITY DEFINER
+function in `public` that `PUBLIC` or `anon` can execute), `catalogue_never_grantable`.

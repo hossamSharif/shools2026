@@ -62,7 +62,17 @@ Constraints added: `status <> 'invited' or school_id is not null`; and `role <> 
 Triggers:
 - `user_sync_primary_assignment` (AFTER INSERT): if `role <> 'super_admin'` and the user has no
   `role_assignment`, insert `(user_id, school_id, role)`. This is the backfill path, and it keeps
-  existing fixtures that insert `public.user` directly working.
+  existing fixtures that insert `public.user` directly working. It is also how the super-admin
+  still creates a school's first admin (existing directory power, FR-024).
+- `user_guard_direct_changes` (BEFORE UPDATE OR DELETE): the super-admin's existing
+  `user_superadmin_all` policy would otherwise let it bypass the role model.
+  - UPDATE: refuses changes to `school_id` (always), and to `role` or `status` unless the
+    transaction-local setting `app.access_sync = 'on'` is set. Only the role-model triggers and
+    the user-management definer functions set it.
+  - DELETE: refuses deleting the last active `school_admin` of a school (`LAST_ADMIN_PROTECTED`).
+  - `service_role` is exempt (test fixtures, worker). The error is `DIRECT_ROLE_CHANGE_FORBIDDEN`.
+    To replace a school's admin, the super-admin calls `superadmin_set_school_admin`
+    (rpc-contracts §B).
 
 RLS (replaces `user_same_school_select`):
 - `user_self_select`: `id = auth.uid()` (unchanged)

@@ -19,7 +19,8 @@ and `packages/web/lib/{auth,actions}`.
 | Role storage | `public.user.role` (enum `user_role`: super_admin, school_admin, accountant, viewer), one role per user. `current_role()` / `current_school_id()` are SECURITY DEFINER helpers that read `public.user` on every call (not JWT claims). | Revocation already works per request, which is the basis for immediate revocation (FR-028). Multi-role needs a new assignment table. |
 | Tenant RLS | Almost every tenant table has one policy, `school_id = current_school_id()`, either `for all` (academic_year, section, student, enrollment, account, fee_structure, fee_item, installment_schedule, reminder_rule) or `for select` (installment, money_event, receipt_counter, audit_entry, payment_allocation, discount, sms_message_log, sms_credit_*). `school` and `subscription` have a same-school read. Storage `money-attachments` is tenant `for all`. | Every one of these is the "access just for being signed in to the school" pattern that FR-020 and FR-035 forbid. **All of them are rewritten.** |
 | Role-aware RLS today | Only `public.user` (school_admin reads same school), `school` update and the `school-logos` bucket (school_admin), and `notification` (own rows). | Kept in spirit, re-expressed through permission keys. |
-| Money/derived functions | SECURITY DEFINER. They check **school only** (`school_id = current_school_id()`), never role. `apply_fee_payment`, `record_*`, `apply_discount`, `reverse_event` can be called through RPC by a **viewer** today. `student_statement`, `receivables_aging`, `dashboard_kpis`, `student_directory`, `student_financial_summary/installments/payments`, `account_balance`, `student_balance`, `installment_running_balance` return full finance data to any same-school user. | A real Phase 1 gap: viewer write-blocking lives only in screens. This feature adds permission checks to every exposed definer function (FR-021). For accountant/admin/viewer, the behaviour reachable through the screens is unchanged. |
+| Money/derived functions | SECURITY DEFINER. Most check **school only** (`school_id = current_school_id()`), never role. *Found in `/speckit-analyze`*: `dashboard_kpis`, `student_statement`, `receivables_aging`, the balance helpers and `sms_credit_balance` do **not** check the target's school at all. `dashboard_kpis`, `student_statement`, `receivables_aging`, `consume_sms_credit`, `sms_credit_balance` and `mark_notification_read` were never revoked from PUBLIC/anon. `consume_sms_credit`, `check_low_sms_credit` and `generate_installments` are executable by `authenticated` although only the worker and the enrollment trigger need them. These are cross-tenant exposures fixed by a standalone hotfix (rpc-contracts §E0). |
+| Money/derived functions (role) | Role is never checked. `apply_fee_payment`, `record_*`, `apply_discount`, `reverse_event` can be called through RPC by a **viewer** today. `student_statement`, `receivables_aging`, `dashboard_kpis`, `student_directory`, `student_financial_summary/installments/payments`, `account_balance`, `student_balance`, `installment_running_balance` return full finance data to any same-school user. | A real Phase 1 gap: viewer write-blocking lives only in screens. This feature adds permission checks to every exposed definer function (FR-021). For accountant/admin/viewer, the behaviour reachable through the screens is unchanged. |
 | Screen gating (`requireRole`) | `(school)` layout: school_admin, accountant, viewer. Spine writes (`createAcademicYear`, `setCurrentYear`, `createSection`, `createAccount`, `upsertStudent`, `setStudentStatus`, `createFeeStructure`, `enrollStudent`), reminder-rule edits and manual SMS: school_admin **and accountant**. `deleteStudent`, logo upload/removal, settings nav: school_admin only. Money events: school_admin, accountant. Exports (`/students/export`, `/reports/receivables/export`): any signed-in user, so viewer exports today. | Defines the **Phase 1 baseline** permission set (R4). Note that the accountant writes students, sections, years, accounts and fee structures today. FR-003 ("exactly their Phase 1 permissions") wins over the "view (as today)" shorthand in the FR-007 table. The viewer export switch defaults **on**. |
 | Worker | `@erp/api` uses the service-role key. Manual SMS is triggered by web → `POST /internal/dispatch/manual` with a shared `INTERNAL_DISPATCH_TOKEN`; role is checked only in the web action. | The manual-SMS path must also check the caller's permission in the data layer (R10). |
 | Tests | `@erp/database` Vitest integration tests use `createAuthedUser(service, role, schoolId)`, which inserts `public.user` directly. Playwright isolation specs exist, but many are `test.skip` for lack of per-role fixtures. | The new role model must keep `insert into public.user (…role…)` working (R2). A per-role fixture seed is added (R12). |
@@ -305,7 +306,8 @@ only) reads `pg_class`, `pg_policies` and `pg_proc` and returns violations. A Vi
 3. any policy or exposed definer function that references `current_role()` other than
    through `current_is_super_admin()`;
 4. any SECURITY DEFINER function that `authenticated` can EXECUTE and that is missing from
-   the reviewed allow-list in `contracts/rpc-contracts.md`;
+   the reviewed allow-list in `contracts/rpc-contracts.md`, and any SECURITY DEFINER function
+   that `PUBLIC` or `anon` can EXECUTE (`definer_public_execute`);
 5. a never-grantable key on a forbidden role in the catalogue tables (R3).
 
 Reference tables (`stage`, `grade`) and the permission catalogue are allow-listed as
@@ -324,7 +326,7 @@ branch database during Gauntlet runs (Article XII).
   and writes per role. It is generated from the same seed as the DB catalogue, so screens,
   tests and DB cannot drift.
 - **Direct-query matrix test** (`packages/database/src/access/matrix.test.ts`): one school
-  fixture (`seeds/test_access_fixture.sql` + `createAuthedStaff(roles[], stages?)`). It has one
+  fixture (`src/access/fixture.ts` + `createAuthedStaff(roles[], stages?)`). It has one
   user per role (9 roles), a teacher with no allocations, a stage-scoped principal (Primary), a
   teacher + student_affairs multi-role user, a guardian linked to Student X, a student linked to
   Y, and a second school B. For every table and function it queries **with that user's own
@@ -387,6 +389,6 @@ stale (against FR-028).
 
 ## Resolved: no remaining NEEDS CLARIFICATION
 
-All Technical Context fields are resolved above. One spec-level note is carried to
-`/speckit-analyze`: R4 (the accountant's actual Phase 1 student/structure write rights versus
-the FR-007 "view (as today)" shorthand). The plan follows FR-003 / US2.
+All Technical Context fields are resolved above. The R4 accountant note was settled in
+`/speckit-analyze` by aligning spec FR-007 with FR-003 (footnote ¹). The same analysis found
+the definer exposure added to R0, fixed by hotfix `0032a` (rpc-contracts §E0).

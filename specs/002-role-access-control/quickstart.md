@@ -13,6 +13,7 @@ expose nothing new).
 
 | # | File | Content | Story |
 |---|---|---|---|
+| 0032a | `0032a_harden_finance_definer_exposure.sql` | **hotfix, ships first**: revoke PUBLIC/anon and internal-only EXECUTE; target-school checks (rpc-contracts §E0). Money migration. | foundational |
 | 0033 | `0033_user_role_values.sql` | add enum values (own txn) | foundational |
 | 0034 | `0034_role_model.sql` | `user.status`, `role_assignment(_stage)`, triggers, backfill from `user.role` | foundational |
 | 0035 | `0035_permission_catalogue.sql` | `permission`, `role_permission_default`, `optional_permission`, `school_role_permission` + seeds from contracts/access-matrix.md | foundational |
@@ -47,7 +48,7 @@ Never hard-code any of these (Security & Secrets).
 
 ## 3. Test fixture
 
-`packages/database/seeds/test_access_fixture.sql`, plus the helper
+`packages/database/src/access/fixture.ts` (`buildAccessFixture`, exported as `@erp/database/test-fixtures`), plus the helper
 `createAuthedStaff(service, { roles, schoolId, stages? })` in
 `packages/database/src/test-helpers/supabase.ts`. The existing `createAuthedUser` is kept
 unchanged. The fixture contains:
@@ -81,15 +82,21 @@ fields and write outcome. Required spot checks (spec acceptance scenarios):
 - every role in A → School B tables return 0 rows (US1-5);
 - principal → `dashboard_kpis` returns the totals subset only, and `student_statement` is
   refused. Switch `finance.read` on, then they match the viewer's results, and `apply_fee_payment`
-  is still refused (US4-4, US4-6);
-- teacher+SA → can update a student, cannot read `money_event` (US4-5);
+  is still refused (US4-4, US4-5);
+- teacher+SA → can update a student, cannot read `money_event` (US4-6);
 - guardian → only X's rows in `student`/`enrollment`; `student_financial_summary(X)` works,
   `(Y)` is refused, and `money_event` returns 0 (US7-1/2); student → only Y, and 0 finance rows
   (US7-3);
 - stage-scoped principal (Primary) → no Middle students; a student moved to Middle disappears
   on the next request (FR-018, FR-018a);
 - super-admin → 0 rows from every finance table and from `access_audit_entry` (US2-3, FR-024);
-- viewer → `apply_fee_payment` RPC is refused (this closes the Phase 1 gap, research R0).
+- viewer → `apply_fee_payment` RPC is refused (this closes the Phase 1 gap, research R0);
+- School A accountant → every finance function called with School B ids (`dashboard_kpis(B)`,
+  `student_statement(B student)`, `receivables_aging(B)`, `account_balance(B account)`,
+  `student_balance`, `installment_running_balance`, `sms_credit_balance(B)`) gives
+  `FORBIDDEN_SCHOOL`. An **anon** client gets a permission error on every definer function.
+  `authenticated` cannot execute `consume_sms_credit`, `check_low_sms_credit` or
+  `generate_installments` (hotfix 0032a).
 
 ### 4.2 Revocation (SC-006)
 With one open client per user: read succeeds → admin calls `deactivate_user` → the same
@@ -107,6 +114,9 @@ client's next `select` returns 0 rows and its next RPC raises. Repeat for `set_u
 - Never-grantable: `insert into school_role_permission (… 'teacher','finance.read' …)` through
   the service client fails with an FK violation, and the `set_optional_permission` RPC raises
   `NOT_GRANTABLE` (SC-009).
+- Super-admin: a direct `update public.user set role/status/school_id` raises
+  `DIRECT_ROLE_CHANGE_FORBIDDEN`. `superadmin_set_school_admin` makes a School A user an active
+  admin and writes a `role_added` audit row the super-admin cannot read.
 - Invitation: accept after `expires_at` (time travel by updating `expires_at` with the service
   client), reuse of a token and a revoked token all give `INVITATION_INVALID`.
 
