@@ -95,6 +95,27 @@
 - **FR-006**: System MUST authenticate users via [NEEDS CLARIFICATION: auth method not specified - email/password, SSO, OAuth?]
 - **FR-007**: System MUST retain user data for [NEEDS CLARIFICATION: retention period not specified]
 
+### Access, Privacy & Public Surface *(mandatory when the feature touches data, people, or SMS)*
+
+<!--
+  Constitution v1.2.0 (Articles VII, XIV–XVIII). Answer each that applies; delete those that
+  do not, or mark [NEEDS CLARIFICATION] when the description does not say.
+-->
+
+- **Who may see / change what (Art. XIV)**: [For each role — school_admin, accountant,
+  viewer, teacher (allocated sections/subjects), guardian (linked students), student
+  (self), super-admin — state read/write rights. Finance data: school_admin, accountant,
+  viewer only; guardians see only their linked students' statement.]
+- **Academic records (Art. XV)**: [Which marks/attendance/results changes are audited; who
+  approves and locks marks; who may correct; what "publish" makes visible and to whom]
+- **Minors' data (Art. XVI)**: [Student personal data involved; guardian consent needed for
+  images; who may see medical notes; documents/photos kept private]
+- **Anonymous surface (Art. XVII)**: [Is anything visible or submittable without login? Only
+  published school content, admission applications, contact messages are allowed]
+- **Mobile portal (Art. XVIII)**: [Guardian/student pages involved — must work at 360px and
+  on a slow connection]
+- **SMS (Art. VII)**: [Any outbound SMS uses the shared credit + dispatch path]
+
 ### Key Entities *(include if feature involves data)*
 
 - **[Entity 1]**: [What it represents, key attributes without implementation]
