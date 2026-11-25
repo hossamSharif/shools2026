@@ -171,10 +171,13 @@ export async function buildAccessFixture(service: SupabaseClient): Promise<Acces
   let schoolB: string | undefined;
 
   const cleanup = async () => {
-    // Users first: role_assignment / portal_link reference the schools and students.
-    await Promise.allSettled(created.map((u) => u.cleanup()));
+    // Schools first: money_event / audit_entry / discount reference the acting
+    // user without cascade, so deleting a user that posted a payment fails
+    // silently while those rows exist. Deleting the school cascades
+    // role_assignment, portal_link and notification; the users go after.
     if (schoolA) await cleanupSchool(service, schoolA);
     if (schoolB) await cleanupSchool(service, schoolB);
+    await Promise.allSettled(created.map((u) => u.cleanup()));
   };
 
   try {
