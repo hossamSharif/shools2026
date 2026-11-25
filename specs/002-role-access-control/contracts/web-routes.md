@@ -50,7 +50,7 @@ Phase 1 call sites keep working. As an extra step, each server action switches
 | Route | Guard | Notes |
 |---|---|---|
 | `/login` | public | after sign-in: `my_access()`. If `!is_staff`, sign out and show "بوابة أولياء الأمور والطلاب غير متاحة بعد" (FR-029). If deactivated, show "تم إيقاف حسابك". |
-| `/auth/accept-invite?token=` | public | form: display name, password, confirm → worker `/invitations/accept` → sign in → `/` |
+| `/auth/accept-invite?token=` | public (authentication flow, Article XVII: no tenant-table access as anon; Zod + 10/min/IP rate limit; single-use token) | form: display name, password, confirm → worker `/invitations/accept` → sign in → `/` |
 | `/forbidden` | `requireAuth` | Arabic "غير مصرّح لك بالوصول إلى هذه الصفحة" + link home (US3-2) |
 | `/` | `requireAuth` | super_admin → `/schools`; `finance.totals` → `/dashboard`; else `/home` |
 | `/home` | `requireStaff` | role landing page: greeting, roles, links to the modules the user can use |
@@ -89,6 +89,13 @@ state, **except** deactivate, remove role, narrow stages and switch off, which s
 
 For school_admin, accountant and viewer this produces exactly the Phase 1 nav lists. The
 existing `responsive-nav.spec.ts` checks this without edits.
+
+## Student photos (FR-008a, Article XVI)
+
+No screen renders `photo_path` directly. `lib/storage/student-photos.ts` exposes
+`signedStudentPhotoUrl(path)`, which calls `createSignedUrl(path, 300)` with the user's session
+client and returns `null` when storage refuses (out of scope). Images use the returned URL
+and are never cached beyond the expiry. There is no public URL helper for this bucket.
 
 ## i18n
 

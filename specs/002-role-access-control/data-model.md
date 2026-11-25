@@ -153,14 +153,13 @@ Seed rows (exactly FR-010):
 | teacher | `announcements.publish_own` | off |
 | student_affairs | `students.fee_indicator` | off |
 | student_affairs | `sms.send_manual` | off |
-| principal | `finance.read` | off |
 | principal | `structure.write` | off |
 | viewer | `finance.export` | **on** (Phase 1 viewers export today, R0) |
 
 - Catalogue invariant (check trigger + audit test): no `optional_permission` or
   `role_permission_default` row may give a **never-grantable** key to a forbidden role. These
-  are: `finance.write` to anyone except school_admin/accountant; `finance.read` to teacher,
-  student_affairs, guardian, student; `users.manage` to anyone except school_admin; any
+  are: `finance.write` to anyone except school_admin/accountant; `finance.read` to principal,
+  teacher, student_affairs, guardian, student; `users.manage` to anyone except school_admin; any
   `portal.*` scope widening.
 - RLS: enabled, `select using (true)` for authenticated (reference data, allow-listed in the
   policy audit). No write grants. Changes happen only through migrations.
@@ -322,6 +321,7 @@ also include `school_id = (select current_school_id())`.
 | notification | own rows, and money types only with `has_perm('finance.read')` | own mark-read (unchanged) |
 | storage `money-attachments` | `has_perm('finance.read')` | `has_perm('finance.write')` |
 | storage `school-logos` | unchanged read | `has_perm('settings.manage')` |
+| storage `student-photos` (new, **private**) | object path `<school_id>/<student_id>/<file>`: `can_read_student(<student_id>)` or `<student_id>` in the caller's teacher roster scope. Served only as 5-minute signed URLs (FR-008a). | `can_write_student(<student_id>)` |
 | stage, grade | `true` (reference data) | none |
 
 For accountant, admin and viewer every condition evaluates to the same rows as today (US2).

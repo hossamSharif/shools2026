@@ -1,6 +1,6 @@
 # Feature Specification: Role-Aware Access Control and New Staff Roles
 
-**Feature Branch**: `ccr-87495f0c-fwh9el` (spec directory `002-role-access-control`)
+**Feature Branch**: `002-role-access-control` (spec directory `002-role-access-control`)
 **Created**: 2026-11-23
 **Status**: Draft
 **Input**: User description: "Role-aware access control and new staff roles for ITLINK School — enforce per-role and per-relationship access at the data layer before teachers, student-affairs staff, guardians and students become users; add principal / student_affairs / teacher roles; reserve guardian / student portal roles; per-module access matrix with limited school-level overrides; user management and audit; zero change to existing finance behaviour."
@@ -20,10 +20,16 @@ Related features in this phase (referenced by number, specified separately):
 ### Session 2026-11-23
 
 - Q: Multi-role users — several roles per user, or one role plus extra permissions? → A: Several staff roles per user; effective rights are the union of the roles. Per-role optional switches (FR-010) still apply. There are no per-user extra permissions.
-- Q: Does the principal see finance data by default? → A: School-level dashboard totals only, with no per-student or per-account detail. Full finance read-only access is an optional switch the school admin can turn on. The principal never has any finance write right.
+- Q: Does the principal see finance data by default? → A: School-level dashboard totals only, with no per-student or per-account detail. Full finance read-only access is an optional switch the school admin can turn on. The principal never has any finance write right. *(Switch superseded on 2026-11-25; see below.)*
 - Q: Is the viewer role still needed once principal exists? → A: Yes. Keep viewer unchanged as the finance-only read-only role (owner, auditor, board member). It can still be assigned to new users.
 - Q: Should principal and student affairs be scoped per stage (Primary / Middle / Secondary)? → A: Optionally. When assigning the role, the school admin may limit it to one or more stages. With no stages chosen, the role covers the whole school.
 - Q: How fast must deactivation and role/permission removal take effect? → A: Immediately, on the user's very next data request, including on already-open sessions.
+
+### Session 2026-11-25 (constitution v1.2.0 alignment)
+
+- Q: Constitution v1.2.0 Article XIV allows finance tables to be read only by `school_admin`, `accountant` and `viewer`. How does a principal get full finance read? → A: The optional "principal: full finance read" switch is dropped. A principal who needs full finance read-only access is also given the `viewer` role (multi-role, FR-004). Dashboard totals stay available to every principal through the dashboard function, never through direct table access.
+- Q: How are student photos served (Article XVI)? → A: Only from tenant-scoped private storage, through short-lived signed URLs (5 minutes). Signing a URL requires the same right as reading the student record (or the teacher's allocation scope).
+- Q: The invitation acceptance page is reachable without signing in. Is that allowed under Article XVII? → A: Yes, as part of authentication, like login and password reset. It is not a content surface: it reads and writes no tenant table as `anon`, is validated with Zod, is rate-limited, and works only with a valid single-use token.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -96,7 +102,7 @@ A principal, a student-affairs officer and a teacher each sign in and can do exa
 2. **Given** a student-affairs user, **When** they try to record any money event, apply a discount, or edit a fee structure, **Then** the action is refused.
 3. **Given** a teacher, **When** they try to create, edit or delete a student, section, enrollment or academic year, **Then** the action is refused.
 4. **Given** a principal, **When** they open student and enrollment data, **Then** they can view all students of the school, and the dashboard shows them school-level finance totals only.
-5. **Given** a principal without the optional full-finance permission, **When** they query a student statement, aging rows, account balances or money events directly, **Then** zero rows are returned. **When** the school admin turns that permission on, **Then** the same queries return what a viewer sees, and every finance write is still refused.
+5. **Given** a user who holds only the principal role, **When** they query a student statement, aging rows, account balances or money events directly, **Then** zero rows are returned. **When** the school admin also assigns them the viewer role, **Then** the same queries return what a viewer sees, and every finance write is still refused.
 6. **Given** a user who holds both the teacher and student-affairs roles, **When** they act, **Then** they can do whatever either role allows and nothing that neither allows. For example, they can edit student records (student affairs) but still cannot read any finance data.
 
 ---
@@ -201,18 +207,18 @@ The guardian and student roles exist in the role model and in the matrix, with r
   ¹ The accountant keeps every Phase 1 right as built (FR-003): creating and editing students, enrolling them, and creating academic years, sections, accounts and fee structures. Deleting students, settings and users stay school-admin only.
 
 - **FR-008**: "Students, limited fields" for teachers MUST mean: name, photo, grade, section, enrollment status. It MUST exclude guardian contact (unless the optional permission in FR-010 is on), any financial field or status, and any internal notes.
+- **FR-008a**: Student photos MUST be stored only in tenant-scoped private storage and served only through short-lived signed URLs (5-minute expiry). Creating a signed URL MUST require the same right as reading that student (FR-013 to FR-018, including the teacher's allocation scope). Photos MUST never appear on any public page (constitution Article XVI).
 - **FR-009**: Rights MUST combine as the union of the user's roles (FR-004), intersected with relationship scope. No combination may produce a right that is in the never-grantable set (FR-011).
 - **FR-010**: The school admin MUST be able to turn on or off, per role within their own school, only the following product-defined optional permissions (default shown):
   - Teacher: view guardian name and phone for allocated students (default off).
   - Teacher: publish announcements to own sections without principal approval (default off).
   - Student affairs: view a student's fee standing as an indicator only (paid / partially paid / unpaid, no amounts) (default off).
   - Student affairs: send a manual SMS to a guardian through the existing credit and dispatch path (default off).
-  - Principal: full finance read-only access, the same read rights as viewer (default off).
   - Principal: create and edit academic years and sections (default off).
   - Viewer: export reports (default per current viewer behaviour).
-- **FR-011**: These MUST be impossible to grant through any screen or direct API call (the never-grantable set): any finance write to any role other than school admin and accountant; any finance read to teacher, student affairs (beyond the FR-010 indicator), guardian or student (beyond the FR-014 own-statement summary); user or role management to any role other than school admin; widening a guardian's or student's scope beyond their linked students or self; any access across schools.
-- **FR-012**: By default the principal MUST see only school-level finance totals, the aggregate figures on the dashboard (for example collected this month and this year, total outstanding, collection rate, number of overdue students). They MUST NOT see any per-student, per-installment, per-account or per-receipt detail, statements, aging rows, money events, the SMS log or finance audit entries. When the school admin turns on the optional "principal: full finance read-only" permission (FR-010), the principal gets the same finance read rights as viewer. In every case the principal MUST NOT have any finance write right.
-- **FR-013**: Money events, accounts, account balances, installments, payment allocations, receipts and receipt numbers, discounts, statements, aging, dashboard money figures, the SMS message log, SMS credit, and finance audit entries MUST be readable only by school admin, accountant and viewer. The principal can read them only as FR-012 allows: school-level totals by default, full read-only when the optional permission is on.
+- **FR-011**: These MUST be impossible to grant through any screen or direct API call (the never-grantable set): any finance write to any role other than school admin and accountant; any finance read to principal (beyond the FR-012 totals), teacher, student affairs (beyond the FR-010 indicator), guardian or student (beyond the FR-014 own-statement summary); user or role management to any role other than school admin; widening a guardian's or student's scope beyond their linked students or self; any access across schools.
+- **FR-012**: By default the principal MUST see only school-level finance totals, the aggregate figures on the dashboard (for example collected this month and this year, total outstanding, collection rate, number of overdue students). They MUST NOT see any per-student, per-installment, per-account or per-receipt detail, statements, aging rows, money events, the SMS log or finance audit entries. A principal who needs full finance read-only access is also assigned the viewer role (FR-004) and then has exactly the viewer's finance read rights through that role. The principal role itself MUST NOT grant any finance table read (constitution Article XIV) or any finance write right.
+- **FR-013**: Money events, accounts, account balances, installments, payment allocations, receipts and receipt numbers, discounts, statements, aging, dashboard money figures, the SMS message log, SMS credit, and finance audit entries MUST be readable only by school admin, accountant and viewer. The principal role gets only the FR-012 school-level totals, through the dashboard function; a principal who also holds the viewer role reads them as a viewer.
 - **FR-014**: A guardian's only finance visibility MUST be the derived statement summary (amount due, paid, remaining, upcoming installments) of their own linked students, served by the existing derived functions. It MUST NOT include raw money events, account names or balances, or any other student's data. This right is defined here and becomes usable in feature 08.
 
 **Relationship scoping**

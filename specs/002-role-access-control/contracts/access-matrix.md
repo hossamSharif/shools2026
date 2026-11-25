@@ -14,7 +14,7 @@ store it) · *(s)* = stage-scopable for principal/student_affairs · *(rel)* = r
 | Key | school_admin | principal | student_affairs | teacher | accountant | viewer | guardian | student |
 |---|---|---|---|---|---|---|---|---|
 | `school.profile_read` | D | D | D | D | D | D | D | D |
-| `finance.read` | D | O | ✗ | ✗ | D | D | ✗ | ✗ |
+| `finance.read` | D | ✗ | ✗ | ✗ | D | D | ✗ | ✗ |
 | `finance.totals` | D | D | — | ✗ | D | D | ✗ | ✗ |
 | `finance.write` | D | ✗ | ✗ | ✗ | D | ✗ | ✗ | ✗ |
 | `finance.export` | D | — | ✗ | ✗ | D | O+ | ✗ | ✗ |
@@ -41,10 +41,14 @@ store it) · *(s)* = stage-scopable for principal/student_affairs · *(rel)* = r
 Notes:
 - The accountant's `students.write` and `structure.write` keep the **actual Phase 1 behaviour**
   (research R0/R4). They add nothing compared with today.
-- The principal's `finance.totals` gives the `dashboard_kpis` *totals subset* (§3). With the
-  `finance.read` switch on, the principal gets exactly the viewer's finance read set (FR-012).
-  `finance.write` is ✗ either way.
-- Multi-role = union (FR-004/009). A ✗ cell is never reachable through any combination,
+- The principal's `finance.totals` gives the `dashboard_kpis` *totals subset* (§3), through the
+  function only (Article XIV). A principal who needs full finance read is also given the
+  **viewer role**, and then reads finance as a viewer (FR-012). The principal role never grants
+  `finance.read` or `finance.write`.
+- Multi-role = union (FR-004/009). ✗ means **that role** can never grant the key, by default or by
+  switch. A user who is explicitly assigned another role that holds the key (e.g. principal +
+  viewer) has it through that role, which is how Article XIV's "school_admin, accountant, viewer
+  only" rule is kept. A ✗ cell is never reachable through optional switches,
   because no role can grant it to the holder of another role.
 
 ## 2. Keys defined now, enforced when the module ships (FR-007)
@@ -75,6 +79,7 @@ defaults.
 | `notification` | own; money types also need `finance.read` | own mark-read | own non-money | own non-money |
 | storage `money-attachments` | `finance.read` | `finance.write` | denied | denied |
 | storage `school-logos` | unchanged | `settings.manage` | — | — |
+| storage `student-photos` (private) | `students.read` *(s)* or portal link, as signed URL only | `students.write` *(s)* | allocated students, signed URL only | linked / self, signed URL only |
 | `user`, `role_assignment(_stage)`, `invitation`, `school_role_permission`, `access_audit_entry`, `portal_link` | `users.read` (plus own rows for `user`, `role_assignment`, `portal_link`) | definer functions with `users.manage` | own only | own only |
 | `student_statement`, `student_payments`, `receivables_aging`, `account_balance`, `installment_running_balance`, `student_balance` | `finance.read` | — | FORBIDDEN | FORBIDDEN |
 | `student_financial_summary`, `student_installments` | `finance.read`, **or** `portal.linked` for a linked student (FR-014 summary) | — | FORBIDDEN | guardian: linked only · student: FORBIDDEN |

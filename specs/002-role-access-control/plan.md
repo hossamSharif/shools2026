@@ -1,6 +1,6 @@
 # Implementation Plan: Role-Aware Access Control and New Staff Roles
 
-**Branch**: `ccr-d2ea954a-1u31qc` (spec authored on `ccr-87495f0c-fwh9el`; spec directory `002-role-access-control`) | **Date**: 2026-11-23 | **Spec**: [spec.md](./spec.md)
+**Branch**: `002-role-access-control` (spec directory `002-role-access-control`) | **Date**: 2026-11-23 | **Spec**: [spec.md](./spec.md)
 **Input**: Feature specification from `/specs/002-role-access-control/spec.md`
 
 ## Summary
@@ -55,7 +55,7 @@ The accountant baseline (research R4) is now reflected in spec FR-007 (footnote 
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-checked after Phase 1 design (below).*
+*GATE: Must pass before Phase 0 research. Re-checked after Phase 1 design (below). Re-checked on 2026-11-25 against constitution **v1.2.0** (Articles XIV–XVIII added; research R15).*
 
 | Article | Requirement | How the plan satisfies it | Status |
 |---|---|---|---|
@@ -72,12 +72,19 @@ The accountant baseline (research R4) is now reflected in spec FR-007 (footnote 
 | XI — Type Safety & Validation | strict TS; Zod at boundaries; shared types SoT | Zod schemas for every new RPC and worker body are in `@erp/shared/schemas/access.ts`. `ACCESS_EXPECTATIONS` and the permission keys live in `@erp/shared/access`. DB types are regenerated through MCP. | PASS |
 | XII — Supabase MCP for DB | MCP-only DB work; owner review of RLS/money migrations | All 16 migrations (hotfix 0032a plus 0033–0047, listed in quickstart §1) go through `apply_migration`. **Every one is flagged for owner review** (all touch RLS and 0039 touches money functions). Types come from `generate_typescript_types`, plus `get_advisors` checks. | PASS (review gate applies) |
 | XIII — Playwright | Only browser tool; RTL assertions | New specs (invite/deactivate, switches, audit, portal login refusal) use Playwright with RTL assertions. The existing suite runs unchanged. | PASS |
+| XIV — Role- and Relationship-Scoped Access (v1.2.0) | No signed-in-only policies; teachers scoped to allocations, guardians to linked students, students to self; finance tables readable only by school_admin, accountant, viewer; guardian finance only via a link-checking function; role × relationship matrix + RLS tests per table | This feature *is* the implementation of XIV: the permission keys and helpers, the policy rewrite, `audit_access_policies()` failing on signed-in-only policies, the role × relationship matrix (contracts/access-matrix.md) and the direct-query matrix tests. `finance.read` is held only by school_admin, accountant and viewer. The principal's optional finance switch was dropped (research R15), so a principal reads full finance only by also holding the viewer role, and gets totals through `dashboard_kpis` only. Guardians reach finance only through `student_financial_summary` / `student_installments`, which check `portal_link`. | PASS |
+| XV — Academic Record Integrity (v1.2.0) | Marks/attendance/results audited, locked after approval, published explicitly, totals computed | Not applicable: there are no marks, attendance or results in this feature. Their keys (`exams.*`, `attendance.*`) are defined as not enforced, and the features that ship them must meet XV. | N/A |
+| XVI — Minors' Privacy (v1.2.0) | No student data on public pages; photo consent; medical notes RLS-scoped; private storage + short-lived signed URLs | New private `student-photos` bucket with role/relationship storage policies; photos served only as 5-minute signed URLs (FR-008a); no public helper. No public page is added. There are no medical notes or gallery in this feature. | PASS |
+| XVII — The Public Surface (v1.2.0) | Only the website and admission form are anonymous; no `anon` grants/policies on tenant tables | No `anon` grant or policy on any tenant table. The policy audit flags any definer function executable by anon (hotfix 0032a removed the existing ones). `/auth/accept-invite` is an authentication flow (like login/reset), not a content surface: Zod-validated, 10/min/IP, single-use hashed token, writes through a service-role-only function (see Complexity Tracking). | PASS (justified) |
+| XVIII — Mobile-First Portal Budget (v1.2.0) | 360px + page-weight budget + slow-3G Playwright for guardian/student pages | Not applicable: no guardian/student pages ship here (staff login refuses portal roles, FR-029). Feature 08 must meet XVIII. | N/A |
 
 **Security & Secrets**: no new secrets. `APP_URL` is config, not a secret. The service key
 stays in the worker. Invitation tokens are stored only as SHA-256 hashes and returned once.
 **Git discipline**: commit per completed task on the active branch; halt if a commit cannot be made.
 
 **Result (pre-research): PASS.** One justified scope extension (Article VI, worker endpoints) is recorded below.
+
+**Re-check against v1.2.0 (2026-11-25): PASS.** One conflict was found and resolved by a spec change: the principal finance switch versus Article XIV (dropped). One addition: private student photos with signed URLs (Article XVI). One justification: the accept-invite page under Article XVII (Complexity Tracking).
 
 **Re-check after Phase 1 design: PASS.** The design artifacts introduce no new violation. The data
 model meets the Article IV checklist for all 9 new tables. Contracts keep money mutation in
@@ -185,3 +192,4 @@ adding flows over `portal_link`.
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | Worker (`@erp/api`) gains invitation send/accept endpoints beyond cron/dispatch/webhook (Article VI scope extension, not a rule breach) | Creating auth users, setting passwords and sending invite mail need the Supabase service key, and the worker is already its only holder. Every authorization decision stays in Postgres (`issue_invitation_token` runs as the admin; `accept_invitation` validates the token under lock). | Putting the service key in Next.js on Vercel widens secret exposure. Supabase's built-in invite link alone cannot give a 7-day, single-use, revocable invitation (FR-026). A separate email provider adds infrastructure for no gain. |
+| `/auth/accept-invite` page + worker `POST /invitations/accept` are reachable without signing in (Article XVII lists only the website and admission form as anonymous) | An invited person has no account yet, so accepting must happen before sign-in, exactly like the existing login and password-reset flows. | Requiring sign-in first is impossible (no password yet). Supabase's own magic link cannot give a 7-day, revocable invite (research R9). The endpoint touches no tenant table as `anon`: it validates a hashed single-use token, is Zod-validated and rate-limited (10/min per IP), and writes only through the service-role-only `accept_invitation`. |

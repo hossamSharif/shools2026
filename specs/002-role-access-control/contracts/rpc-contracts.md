@@ -17,7 +17,7 @@ const StageScope = z.object({
 }).strict();
 const OptionalPermissionKey = z.enum([
   'students.guardian_contact','announcements.publish_own','students.fee_indicator',
-  'sms.send_manual','finance.read','structure.write','finance.export',
+  'sms.send_manual','structure.write','finance.export',
 ]);
 ```
 
@@ -44,7 +44,9 @@ const MyAccess = z.object({
 ### `teacher_roster(p_section_id uuid default null) → table(...)`  (authenticated)
 Requires `students.read_limited`. Returns only rows in `teacher_section_ids()`, which is
 empty until feature 02.
-Columns: `student_id, name, photo_path, grade_id, grade_label, section_id, section_name,
+Columns (`photo_path` is a private-storage key: the web signs it per request with
+`storage.from('student-photos').createSignedUrl(path, 300)` under the user's session, and the
+storage policy refuses students outside the caller's scope; FR-008a, Article XVI): `student_id, name, photo_path, grade_id, grade_label, section_id, section_name,
 enrollment_status, guardian_name, guardian_phone`. The last two are NULL unless
 `students.guardian_contact` is on.
 

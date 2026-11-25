@@ -26,7 +26,7 @@ expose nothing new).
 | 0042 | `0042_manual_sms_authorization.sql` | `authorize_manual_sms()` | US2 |
 | 0043 | `0043_invitation_access_audit.sql` | `invitation`, `access_audit_entry` + immutability trigger | US3 |
 | 0044 | `0044_user_management_functions.sql` | `list_school_users`, `list_invitations`, invitation lifecycle, `set_user_roles`, `deactivate_user`, `reactivate_user`, `expire_invitations` | US3 |
-| 0045 | `0045_new_role_functions.sql` | `teacher_roster()`, `register_student()` | US4 |
+| 0045 | `0045_new_role_functions.sql` | `teacher_roster()`, `register_student()`, private `student-photos` bucket + storage policies (FR-008a) | US4 |
 | 0046 | `0046_optional_permission_functions.sql` | `optional_permission_matrix()`, `set_optional_permission()` | US5 |
 | 0047 | `0047_access_audit_read.sql` | `list_access_audit()` | US6 |
 
@@ -56,7 +56,7 @@ unchanged. The fixture contains:
 - School A (active) with the Gauntlet finance data (students X, Y, Z across Primary/Middle,
   payments, receipts, SMS log); School B with one student and one payment.
 - One user per role in A: school_admin (×2, for last-admin tests), principal (school-wide),
-  principal (Primary only), student_affairs (school-wide), student_affairs (Middle only),
+  principal (Primary only), principal + viewer (multi-role), student_affairs (school-wide), student_affairs (Middle only),
   teacher (no allocations), accountant, viewer, a teacher+student_affairs multi-role user,
   guardian (linked to X), student (linked to Y).
 - One school_admin in B, and the super-admin.
@@ -81,8 +81,11 @@ fields and write outcome. Required spot checks (spec acceptance scenarios):
 - teacher → `student`, `section`, `enrollment`, `academic_year` return 0 rows (US1-4);
 - every role in A → School B tables return 0 rows (US1-5);
 - principal → `dashboard_kpis` returns the totals subset only, and `student_statement` is
-  refused. Switch `finance.read` on, then they match the viewer's results, and `apply_fee_payment`
-  is still refused (US4-4, US4-5);
+  refused. `principalViewer` (principal + viewer roles) matches the viewer's results, and
+  `apply_fee_payment` is still refused (US4-4, US4-5). `set_optional_permission('principal',
+  'finance.read', true)` gives `NOT_GRANTABLE` (Article XIV);
+- `student-photos` bucket: a teacher, or a user of School B, cannot read a School A student's
+  photo object or sign a URL for it. A school_admin's signed URL expires after 300 s (FR-008a);
 - teacher+SA → can update a student, cannot read `money_event` (US4-6);
 - guardian → only X's rows in `student`/`enrollment`; `student_financial_summary(X)` works,
   `(Y)` is refused, and `money_event` returns 0 (US7-1/2); student → only Y, and 0 finance rows

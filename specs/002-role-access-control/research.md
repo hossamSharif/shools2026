@@ -123,7 +123,7 @@ enforcement); a free-form per-school `(role, key)` grant table guarded by a trig
 | Key | Gives | Default roles |
 |---|---|---|
 | `school.profile_read` | own `school` row (name, logo), own `subscription` lifecycle (for the read-only banner) | all staff roles, guardian, student |
-| `finance.read` | all finance tables and finance-derived functions (FR-013) | school_admin, accountant, viewer; principal via optional |
+| `finance.read` | all finance tables and finance-derived functions (FR-013) | school_admin, accountant, viewer only (Article XIV); a principal gets it only by also holding the viewer role |
 | `finance.totals` | `dashboard_kpis` aggregate subset (FR-012) | school_admin, accountant, viewer, principal |
 | `finance.write` | money RPCs, accounts, fee structures/items/schedules, reminder rules, money attachments | school_admin, accountant |
 | `finance.export` | finance exports (receivables CSV/PDF) | school_admin, accountant; viewer via optional (default **on**) |
@@ -386,6 +386,38 @@ stale (against FR-028).
   `finance.read`.
 
 ---
+
+## R15. Constitution v1.2.0 alignment (2026-11-25)
+
+The constitution was amended to v1.2.0 after this plan was written. It adds Articles XIV–XVIII.
+
+- **Article XIV (finance readers)**:
+  - **Decision**: drop the optional "principal: full finance read" switch. A principal who needs
+    full finance read-only is also given the `viewer` role.
+  - **Rationale**: XIV says finance tables are readable *only* by school_admin, accountant and
+    viewer. Multi-role keeps the reader a viewer, and the principal role's dashboard totals go
+    through `dashboard_kpis` only.
+  - **Alternatives**: amend XIV (rejected: weakens a fresh article); serve the principal through
+    functions only (rejected: still a grey area, and more code).
+- **Article XVI (photos)**:
+  - **Decision**: a new private `student-photos` bucket, path `<school_id>/<student_id>/<file>`,
+    storage policies that reuse `can_read_student` / the teacher roster scope / `can_write_student`,
+    and web access only through 5-minute signed URLs.
+  - **Alternatives**: a public bucket (forbidden by XVI); serving photos through a definer
+    function (needless).
+- **Article XVII (anonymous surface)**:
+  - **Decision**: `/auth/accept-invite` and the worker's `POST /invitations/accept` are treated as
+    part of **authentication**, like the existing login and password-reset pages, not as a
+    content surface.
+  - **Rationale**: they grant no `anon` access to tenant tables (the worker validates a hashed
+    single-use token and writes through a service-role-only function), they validate with Zod,
+    and they are rate-limited at 10/min per IP. This is recorded in the plan's Complexity
+    Tracking.
+- **Articles XV and XVIII**: not applicable to this feature. There are no marks, results or
+  attendance data, and no guardian/student pages (those come in later features, which must
+  meet them).
+- **Article VII (expanded)**: student affairs' optional manual SMS already uses the single credit
+  and dispatch path (rpc-contracts §D). No change.
 
 ## Resolved: no remaining NEEDS CLARIFICATION
 
