@@ -103,3 +103,44 @@ applied. This does **not** replace the live Gauntlet run (T011).
   `packages/database/src/test-helpers/supabase.ts`.
 
 **T011 closed.** The hotfix is live, and the Phase 1 database Gauntlet is green.
+
+## Foundation 0033–0037: local verification (before owner review, T012–T017)
+
+Throwaway local Postgres 16 with stub Supabase `auth`/`storage` schemas and Supabase-like
+default privileges (tables and functions granted to `anon`/`authenticated` on creation). All
+Phase 1 SQL files through 0032a were loaded from the working tree, with 5 pre-existing school
+users (2 schools) and the super-admin, and then 0033 → 0037 were applied one transaction each.
+This does **not** replace the live apply and checks of T018.
+
+- All five migrations apply cleanly.
+- **Backfill (US2-4, FR-018a):** every school user has exactly one assignment equal to
+  `user.role`. There are 0 stage rows and no assignment for the super-admin.
+- **RLS:** enabled and forced on all 7 new tables. `anon` has no privilege on any of them, and
+  `authenticated` has `select` only. Catalogue: 49 keys (28 not yet enforced), 138 default
+  grants, 6 optional switches.
+- **Helpers, as real `authenticated` sessions:**
+  - accountant `my_access()`: `["accountant"]`, school set, 12 keys, staff;
+  - super-admin: `["super_admin"]`, no school, 0 keys;
+  - teacher + student_affairs: union (`students.write` and `students.read_limited`), no `finance.read`;
+  - principal (Primary only): `perm_scope('students.read')` = [Primary], `users.read` school-wide,
+    `finance.read` = `{}`;
+  - principal: school-wide, `finance.totals` only;
+  - principal + viewer: `finance.read` and the viewer's default-on `finance.export`, no `finance.write`;
+  - deactivated user: `current_school_id()` NULL, no keys;
+  - guardian: not staff, `portal.linked`;
+  - `role_assignment` reads: a teacher sees only their own row; the admin sees School A only.
+- **Refusals:** `PORTAL_STAFF_MIX` (both directions), `STAGE_SCOPE_NOT_ALLOWED` (stages on
+  teacher), `FORBIDDEN_SCHOOL` (assignment in another school), a check violation for a
+  super_admin assignment, an FK violation for `('teacher','finance.read')` in
+  `school_role_permission` (SC-009), and `NOT_GRANTABLE` for never-grantable default and
+  optional rows and for a portal key on a staff role.
+- **Super-admin through `user_superadmin_all`:** changing `role`, `status` or `school_id` gives
+  `DIRECT_ROLE_CHANGE_FORBIDDEN`, deleting School B's only admin gives `LAST_ADMIN_PROTECTED`,
+  and renaming a user is still allowed.
+- **No Phase 1 change:** `user_same_school_select` still returns School A users only to the
+  School A admin. `apply_fee_payment` as the accountant gives the same result as the 0032a
+  baseline (receipt 1, account 100 → 220, student 300 → 180), and the accountant still reads
+  `money_event`. A `service_role` JWT is allow-all and school-wide, and `anon` is refused
+  `my_access` and `has_perm`.
+
+**Next: T018 owner review gate.** Not yet applied to the live database.
