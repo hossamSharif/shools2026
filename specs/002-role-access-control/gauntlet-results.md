@@ -315,3 +315,36 @@ Design additions found necessary while writing the migrations (owner review):
 - **Not yet run:** the Phase 1 Vitest money suite (reconciliation, receipt concurrency, idempotency,
   write gating) and T024–T027 against the live database. This session has no Supabase keys
   (`INTEGRATION_ENV_READY` is false). **T033 stays open until those suites run.**
+
+## Performance check (T046, SC-008), local, 2026-11-25
+
+T046 asks for before/after numbers, with "before" taken on a branch without 0038/0039.
+Production already has them, and its Gauntlet data holds only 12 students (the "2,000-student
+seed" does not exist). The check therefore ran on the two local snapshots from the US1
+verification:
+
+- **Schemas:** `before0038` is Phase 1 through 0037a; `after0038` is the same plus 0038–0042.
+- **Load:** the same synthetic load was added to both: 2,000 extra students in School A, enrolled
+  half in Primary and half in Middle (4,005 trigger-generated installments), and 600 payments
+  posted through `apply_fee_payment` as the accountant.
+- **Measurement:** 25 timed runs per query after one warm-up, as the accountant's
+  `authenticated` session. Local Postgres 16 is not production hardware, so the absolute numbers
+  only compare with each other.
+
+| Query (accountant) | p50 before → after (ms) | p95 before → after (ms) | p95 change |
+|---|---|---|---|
+| `student_directory` (2,004 rows) | 1517.0 → 1321.2 | 1629.9 → 1403.8 | **−14 %** |
+| `receivables_aging` | 434.3 → 443.4 | 500.1 → 516.7 | +3 % |
+| `dashboard_kpis` (3 extra rounds) | 212–222 → 210–216 | 252–282 → 242–255 | ≤ 0 % (noise) |
+| `student_statement` (one student) | 0.4–0.7 → 0.8–1.4 | 1.0–1.6 → 1.5–2.2 | +0.5–1.2 ms |
+| payments list (`listPayments` query, 500 rows) | 0.3–0.5 → 0.7–0.8 | 0.3–0.6 → 0.7–0.9 | +0.3–0.5 ms |
+
+- **Init-plan:** `EXPLAIN ANALYZE` of a `money_event` select as the accountant shows the policy
+  helpers as two `InitPlan`s with `loops=1`, so they are evaluated once per statement, not per row.
+- **Large queries** (directory, aging, dashboard): within the ≤10 % p95 budget. The directory is
+  faster, because its per-row balance calls now go to the `*_unchecked` helpers.
+- **Sub-millisecond queries** (statement, payments list): they gain a fixed 0.3–1.2 ms, which is
+  the per-statement permission lookup (`my_effective_grants`). In relative terms that exceeds
+  10 %, but the absolute cost is about one millisecond per request. **Owner decision:** accept it
+  as meeting SC-008 ("accountant daily tasks no slower" in practice), or ask for a cached
+  per-request grant set later. T046 stays open until then.
