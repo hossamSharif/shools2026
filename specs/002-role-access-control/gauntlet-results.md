@@ -73,7 +73,33 @@ applied. This does **not** replace the live Gauntlet run (T011).
     and `assert_writes_allowed(p_school_id)` reveal any school's lifecycle state.
   - Pre-existing configuration warnings, unrelated to 0032a: `pg_trgm` in `public`; leaked-password
     protection disabled in Auth.
-- **Not yet run:** the integration test `definer-exposure.test.ts`, the Phase 1 money Vitest suite
-  and `us9-notifications.spec.ts`. They need `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
-  `SUPABASE_ANON_KEY` in this environment. The equivalent behaviour was verified locally
-  (above) and on live (this section). T011 stays open until those suites run.
+- **Automated suites against live, 2026-11-25** (keys provided by the owner, used only as
+  environment variables):
+  - `definer-exposure.test.ts`: **21/21 passed**.
+  - Full `@erp/database` Vitest suite (Phase 1 Gauntlet: reconciliation, receipt concurrency,
+    idempotency, write gating, aging, KPIs, reversal, top-up, installments): **59/59 passed**
+    in 13 files.
+  - A direct API probe: an anon `POST /rest/v1/rpc/dashboard_kpis` returns `42501
+    permission denied`.
+  - `us9-notifications.spec.ts`: **3/4 passed**. Low-credit (`check_low_sms_credit` via the service
+    role), expiring-soon and mark-read all pass. The UI payment test fails for a reason
+    unrelated to 0032a:
+    - the payment posts (receipt 37, 7.00 SDG on the Gauntlet School A), but the web output
+      schema rejects `student_balance_after = -866.00`;
+    - the hotfixed `student_balance` returns exactly the original expression's value
+      (`-866.00` both ways);
+    - the negative comes from accumulated Gauntlet data on test student
+      `a5000000-…0001` (charged 9,500; payments 2,901; discounts 7,600; 19 adjustments and
+      19 refunds from repeated E2E runs, July–August).
+
+    Follow-up (Phase 1, not 002): `student_balance` is not clamped like
+    `installment_running_balance`, so discounts can drive it below zero, and the `Money` output
+    schema then fails a payment response. Reset the Gauntlet seed, and decide whether discounts
+    should be capped at the remaining balance.
+- **Test leftovers:** the Phase 1 helper `createAuthedUser.cleanup()` deletes the user before the
+  school's money rows, so the delete silently fails and orphan `t-*@example.test` accounts
+  remain. The 7 from this run were removed. 10 older ones (2026-07-03 and 2026-07-13) are still
+  there, waiting on an owner decision. Follow-up: fix the cleanup order in
+  `packages/database/src/test-helpers/supabase.ts`.
+
+**T011 closed.** The hotfix is live, and the Phase 1 database Gauntlet is green.
