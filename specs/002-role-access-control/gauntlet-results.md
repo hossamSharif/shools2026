@@ -191,3 +191,33 @@ This does **not** replace the live apply and checks of T018.
   `packages/database/src/types/database.ts`. `pnpm -w typecheck` passes (8/8).
 
 **T018 and T019 closed.** The foundation is live, and Phase 1 behaviour is unchanged.
+
+## Foundation tests (T022): live verification, 2026-11-25
+
+`packages/database/src/access/foundation.test.ts` is written but skips in this session: there is
+no `SUPABASE_URL` or service key, so `INTEGRATION_ENV_READY` is false. Its scenarios were checked
+instead on the live database, as real `authenticated` sessions, inside blocks that always abort
+(nothing persisted):
+
+- **Refusals:** `PORTAL_STAFF_MIX` in both directions, `STAGE_SCOPE_NOT_ALLOWED` for stages on a
+  teacher, and an FK violation (23503) for `('teacher','finance.read')` in
+  `school_role_permission`.
+- **Primary role:** teacher + student_affairs gets primary role `student_affairs`, and
+  `my_access().roles` = `[student_affairs, teacher]`. The union holds: `students.write` and
+  `students.read_limited`, no `finance.read`.
+- **Stage scope:**
+  - principal (Primary): `perm_scope('students.read')` = [Primary], `users.read` school-wide;
+  - principal: `students.read` school-wide, `finance.read` = `{}`.
+- **Deactivated user:** `current_school_id()` NULL, no keys, status `deactivated`, 0 `money_event` rows.
+- **Super-admin through `user_superadmin_all`** (live `authenticated` holds UPDATE/DELETE on
+  `public.user`, so the guard trigger is the real protection):
+  - a plain request changing `role` or `status` gives `DIRECT_ROLE_CHANGE_FORBIDDEN`;
+  - changing `school_id` is refused;
+  - deleting a school's only admin gives `LAST_ADMIN_PROTECTED`;
+  - renaming a user is still allowed.
+- **Defect found:** `trg_role_assignment_sync_primary` (0034) leaves `app.access_sync = 'on'` for
+  the rest of the transaction. In a transaction that first writes `role_assignment`, a later
+  direct `role` or `status` change is therefore not refused. A plain PostgREST request is not
+  exposed, because `authenticated` cannot write `role_assignment`. Fixed forward by
+  `0037a_scope_access_sync_flag.sql` (restores the previous value after the trigger's own
+  UPDATE). **Written; awaiting owner review before apply.**
