@@ -1,11 +1,19 @@
-import { requireRole } from '../../lib/auth/guard.js';
+import { requireStaff } from '../../lib/auth/guard.js';
 import { AppShell } from '../../components/app-shell.js';
 
-/** School operator surface (US2–US4). Tenant-scoped by RLS + role guard. */
+/** School operator surface. Staff only (FR-029); RLS + permission guards decide. */
 export default async function SchoolLayout({ children }: { children: React.ReactNode }) {
-  const ctx = await requireRole('school_admin', 'accountant', 'viewer');
+  const ctx = await requireStaff();
   return (
-    <AppShell role={ctx.role} displayName={ctx.displayName} schoolId={ctx.schoolId}>
+    <AppShell
+      access={{
+        permissions: ctx.permissions,
+        isSuperAdmin: ctx.isSuperAdmin,
+        isStaff: ctx.isStaff,
+      }}
+      displayName={ctx.displayName}
+      schoolId={ctx.schoolId}
+    >
       {children}
     </AppShell>
   );

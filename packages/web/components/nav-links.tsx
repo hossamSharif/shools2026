@@ -9,6 +9,7 @@ import {
   Bell,
   Settings,
   Building2,
+  Home,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -20,6 +21,7 @@ import {
 const NAV_ICONS: Record<string, LucideIcon> = {
   schools: Building2,
   dashboard: LayoutDashboard,
+  home: Home,
   students: Users,
   payments: Wallet,
   expenses: ReceiptText,
@@ -44,13 +46,7 @@ export interface NavLinkItem {
  * its data can cross into the client-rendered MobileNav without passing a
  * function prop across the server/client boundary).
  */
-export function NavLinks({
-  items,
-  onNavigate,
-}: {
-  items: NavLinkItem[];
-  onNavigate?: () => void;
-}) {
+export function NavLinks({ items, onNavigate }: { items: NavLinkItem[]; onNavigate?: () => void }) {
   return (
     <ul className="space-y-1">
       {items.map((item) => {
@@ -62,7 +58,9 @@ export function NavLinks({
               onClick={onNavigate}
               className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-gray-700 hover:bg-muted hover:text-primary"
             >
-              {Icon && <Icon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" aria-hidden />}
+              {Icon && (
+                <Icon className="h-[18px] w-[18px] shrink-0 text-muted-foreground" aria-hidden />
+              )}
               <span>{item.label}</span>
             </Link>
           </li>

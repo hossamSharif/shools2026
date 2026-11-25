@@ -5,6 +5,7 @@
     "closeMenu": "إغلاق القائمة",
     "nav": {
       "dashboard": "لوحة التحكم",
+      "home": "الرئيسية",
       "students": "الطلاب",
       "payments": "المدفوعات",
       "expenses": "المصروفات",

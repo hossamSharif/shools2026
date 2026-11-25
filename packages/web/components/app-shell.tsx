@@ -1,5 +1,4 @@
 import { getTranslations } from 'next-intl/server';
-import type { UserRole } from '../lib/auth/guard.js';
 import { LifecycleBanner } from './lifecycle-banner.js';
 import { getLifecycleInfo, writesAllowed } from '../lib/auth/lifecycle-gate.js';
 import { NotificationBell } from './notifications/bell.js';
@@ -9,46 +8,69 @@ import { MobileNav } from './mobile-nav.js';
 import { createSupabaseServerClient } from '../lib/supabase/server.js';
 import { schoolLogoUrl } from '../lib/storage/school-logo.js';
 
+/** Who sees a nav entry (contracts/web-routes.md, Navigation). */
+type NavGate =
+  | { perm: string } // holds the permission key
+  | { withoutPerm: string } // staff WITHOUT this key (the role landing page)
+  | { staff: true } // any active staff member
+  | { superAdmin: true }; // operator surface only
+
 interface NavItem {
   href: string;
   key: string;
-  roles: UserRole[];
+  gate: NavGate;
   /** Mutate surfaces (T128, US8): hidden outside the active lifecycle state. */
   mutate?: boolean;
 }
 
-// Role-scoped navigation. Super-admin sees only the operator surface (schools);
-// school roles see the tenant app (Article IV separation).
+export interface ShellAccess {
+  permissions: ReadonlySet<string>;
+  isSuperAdmin: boolean;
+  isStaff: boolean;
+}
+
+// Permission-scoped navigation. For school_admin, accountant and viewer this
+// yields exactly the Phase 1 lists (responsive-nav.spec.ts, FR-036).
+// Super-admin sees only the operator surface (schools; Article IV separation).
 const NAV: NavItem[] = [
-  { href: '/schools', key: 'schools', roles: ['super_admin'] },
-  { href: '/dashboard', key: 'dashboard', roles: ['school_admin', 'accountant', 'viewer'] },
-  { href: '/students', key: 'students', roles: ['school_admin', 'accountant', 'viewer'] },
+  { href: '/schools', key: 'schools', gate: { superAdmin: true } },
+  { href: '/dashboard', key: 'dashboard', gate: { perm: 'finance.totals' } },
+  { href: '/home', key: 'home', gate: { withoutPerm: 'finance.totals' } },
+  { href: '/students', key: 'students', gate: { perm: 'students.read' } },
   // The section landing pages are the lists; `/payments/new` and
   // `/expenses/new` remain reachable as standalone routes. Still flagged
   // `mutate` so the whole section disappears outside the active lifecycle
   // state, exactly as before.
-  { href: '/payments', key: 'payments', roles: ['school_admin', 'accountant'], mutate: true },
-  { href: '/expenses', key: 'expenses', roles: ['school_admin', 'accountant'], mutate: true },
-  { href: '/reports/receivables', key: 'reports', roles: ['school_admin', 'accountant', 'viewer'] },
-  { href: '/sms', key: 'sms', roles: ['school_admin', 'accountant', 'viewer'] },
-  { href: '/notifications', key: 'notifications', roles: ['school_admin', 'accountant', 'viewer'] },
-  { href: '/settings/years', key: 'settings', roles: ['school_admin'] },
+  { href: '/payments', key: 'payments', gate: { perm: 'finance.write' }, mutate: true },
+  { href: '/expenses', key: 'expenses', gate: { perm: 'finance.write' }, mutate: true },
+  { href: '/reports/receivables', key: 'reports', gate: { perm: 'finance.read' } },
+  { href: '/sms', key: 'sms', gate: { perm: 'finance.read' } },
+  { href: '/notifications', key: 'notifications', gate: { staff: true } },
+  { href: '/settings/years', key: 'settings', gate: { perm: 'settings.read' } },
 ];
 
+function visible(gate: NavGate, access: ShellAccess): boolean {
+  if ('superAdmin' in gate) return access.isSuperAdmin;
+  if (access.isSuperAdmin) return false;
+  if ('staff' in gate) return access.isStaff;
+  if ('withoutPerm' in gate) return access.isStaff && !access.permissions.has(gate.withoutPerm);
+  return access.permissions.has(gate.perm);
+}
+
 /**
- * RTL app shell with role-scoped nav. Server component (reads translations).
+ * RTL app shell with permission-scoped nav. Server component (reads translations).
  * T128/T129 (US8): resolves the derived lifecycle state once, hides mutate nav
  * entries outside 'active', and pins the countdown banner. This is a UI
  * affordance only — every mutate RPC re-enforces write-gating server-side
  * regardless (Article IV — the DB is the sole authority).
  */
 export async function AppShell({
-  role,
+  access,
   displayName,
   schoolId = null,
   children,
 }: {
-  role: UserRole;
+  access: ShellAccess;
   displayName: string;
   schoolId?: string | null;
   children: React.ReactNode;
@@ -57,7 +79,7 @@ export async function AppShell({
   const { state } = await getLifecycleInfo(schoolId);
   const allowMutate = writesAllowed(state);
 
-  const items = NAV.filter((i) => i.roles.includes(role) && (allowMutate || !i.mutate)).map(
+  const items = NAV.filter((i) => visible(i.gate, access) && (allowMutate || !i.mutate)).map(
     (i) => ({ href: i.href, label: t(`nav.${i.key}`), icon: i.key }),
   );
 
