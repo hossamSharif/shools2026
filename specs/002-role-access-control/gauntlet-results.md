@@ -49,6 +49,31 @@ applied. This does **not** replace the live Gauntlet run (T011).
     300 → 180), so nested definer calls pass the guard;
   - an accountant enrollment still generates installments through the trigger.
 
-## Hotfix 0032a: live apply (T011)
+## Hotfix 0032a: live apply (T011), 2026-11-25
 
-_Pending owner review of the SQL._
+- Owner approved the SQL in chat. Applied through Supabase MCP `apply_migration` as
+  `0032a_harden_finance_definer_exposure` (recorded version `20261125074628`).
+- **Live permissions after apply:** anon has EXECUTE on none of the 12 functions;
+  `consume_sms_credit`, `check_low_sms_credit` and `generate_installments` are service_role only;
+  all 7 finance functions contain the `assert_target_school` guard.
+- **Live behaviour, on real data inside a block that always aborts (nothing persisted),
+  acting as a real school user:**
+  - same school: `dashboard_kpis` identical to the trusted value, `student_balance` identical,
+    `student_statement` the same row count (82);
+  - other school: `dashboard_kpis`, `receivables_aging`, `student_statement`,
+    `student_balance`, `sms_credit_balance` and `account_balance` all raise `FORBIDDEN_SCHOOL`.
+- **Security advisor after apply:**
+  - `anon_security_definer_function_executable` now lists only
+    `update_own_display_name` (pre-existing; it acts on `auth.uid()`, so it is a no-op for anon).
+    Revoking it from anon belongs to the US1 policy-audit work (T032), which flags any
+    definer function executable by anon.
+  - `authenticated_security_definer_function_executable` (27) is expected: these are the
+    RPC API. Each now self-checks the school, and feature 002 adds permission checks and a
+    reviewed allow-list. Two low-risk items to handle there: `subscription_state(p_school_id)`
+    and `assert_writes_allowed(p_school_id)` reveal any school's lifecycle state.
+  - Pre-existing configuration warnings, unrelated to 0032a: `pg_trgm` in `public`; leaked-password
+    protection disabled in Auth.
+- **Not yet run:** the integration test `definer-exposure.test.ts`, the Phase 1 money Vitest suite
+  and `us9-notifications.spec.ts`. They need `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and
+  `SUPABASE_ANON_KEY` in this environment. The equivalent behaviour was verified locally
+  (above) and on live (this section). T011 stays open until those suites run.
