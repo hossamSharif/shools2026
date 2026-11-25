@@ -650,6 +650,35 @@ export type Database = {
           },
         ]
       }
+      optional_permission: {
+        Row: {
+          default_enabled: boolean
+          label_ar: string
+          permission_key: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          default_enabled: boolean
+          label_ar: string
+          permission_key: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          default_enabled?: boolean
+          label_ar?: string
+          permission_key?: string
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "optional_permission_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permission"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       payment_allocation: {
         Row: {
           amount: number
@@ -695,6 +724,82 @@ export type Database = {
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "school"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      permission: {
+        Row: {
+          action: string
+          enforced: boolean
+          key: string
+          label_ar: string
+          module: string
+          stage_scopable: boolean
+        }
+        Insert: {
+          action: string
+          enforced?: boolean
+          key: string
+          label_ar: string
+          module: string
+          stage_scopable?: boolean
+        }
+        Update: {
+          action?: string
+          enforced?: boolean
+          key?: string
+          label_ar?: string
+          module?: string
+          stage_scopable?: boolean
+        }
+        Relationships: []
+      }
+      portal_link: {
+        Row: {
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["portal_link_kind"]
+          school_id: string
+          student_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: Database["public"]["Enums"]["portal_link_kind"]
+          school_id: string
+          student_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["portal_link_kind"]
+          school_id?: string
+          student_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portal_link_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "school"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_link_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "student"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "portal_link_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user"
             referencedColumns: ["id"]
           },
         ]
@@ -760,6 +865,118 @@ export type Database = {
           },
         ]
       }
+      role_assignment: {
+        Row: {
+          assigned_at: string
+          assigned_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          school_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["user_role"]
+          school_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          school_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_assignment_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_assignment_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "school"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_assignment_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_assignment_stage: {
+        Row: {
+          assignment_id: string
+          school_id: string
+          stage_id: string
+        }
+        Insert: {
+          assignment_id: string
+          school_id: string
+          stage_id: string
+        }
+        Update: {
+          assignment_id?: string
+          school_id?: string
+          stage_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_assignment_stage_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "role_assignment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_assignment_stage_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "school"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_assignment_stage_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stage"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permission_default: {
+        Row: {
+          permission_key: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          permission_key: string
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          permission_key?: string
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permission_default_permission_key_fkey"
+            columns: ["permission_key"]
+            isOneToOne: false
+            referencedRelation: "permission"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       school: {
         Row: {
           created_at: string
@@ -780,6 +997,55 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      school_role_permission: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          enabled: boolean
+          permission_key: string
+          role: Database["public"]["Enums"]["user_role"]
+          school_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          enabled: boolean
+          permission_key: string
+          role: Database["public"]["Enums"]["user_role"]
+          school_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          enabled?: boolean
+          permission_key?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          school_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_role_permission_catalogue_fk"
+            columns: ["role", "permission_key"]
+            isOneToOne: false
+            referencedRelation: "optional_permission"
+            referencedColumns: ["role", "permission_key"]
+          },
+          {
+            foreignKeyName: "school_role_permission_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_role_permission_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "school"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       section: {
         Row: {
@@ -1061,26 +1327,43 @@ export type Database = {
       user: {
         Row: {
           created_at: string
+          deactivated_at: string | null
+          deactivated_by: string | null
           display_name: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
           school_id: string | null
+          status: Database["public"]["Enums"]["user_status"]
         }
         Insert: {
           created_at?: string
+          deactivated_at?: string | null
+          deactivated_by?: string | null
           display_name: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
           school_id?: string | null
+          status?: Database["public"]["Enums"]["user_status"]
         }
         Update: {
           created_at?: string
+          deactivated_at?: string | null
+          deactivated_by?: string | null
           display_name?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           school_id?: string | null
+          status?: Database["public"]["Enums"]["user_status"]
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_deactivated_by_fkey"
+            columns: ["deactivated_by"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1112,10 +1395,17 @@ export type Database = {
         Returns: Json
       }
       ar_normalize: { Args: { p_text: string }; Returns: string }
+      assert_perm: { Args: { p_key: string }; Returns: undefined }
+      assert_target_school: {
+        Args: { p_school_id: string }
+        Returns: undefined
+      }
       assert_writes_allowed: {
         Args: { p_context?: string; p_school_id: string }
         Returns: undefined
       }
+      can_read_student: { Args: { p_student_id: string }; Returns: boolean }
+      can_write_student: { Args: { p_student_id: string }; Returns: boolean }
       check_low_sms_credit: {
         Args: { p_school_id: string; p_threshold?: number }
         Returns: undefined
@@ -1135,6 +1425,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["user_role"]
       }
       current_school_id: { Args: never; Returns: string }
+      current_year_id: { Args: never; Returns: string }
       dashboard_kpis: { Args: { p_school_id: string }; Returns: Json }
       digits_only: { Args: { p_text: string }; Returns: string }
       emit_expiry_notifications: {
@@ -1154,14 +1445,38 @@ export type Database = {
         Args: { p_enrollment_id: string }
         Returns: number
       }
+      has_perm: { Args: { p_key: string }; Returns: boolean }
       installment_running_balance: {
         Args: { p_installment_id: string }
         Returns: number
       }
+      is_never_grantable: {
+        Args: {
+          p_key: string
+          p_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: boolean
+      }
+      is_service_caller: { Args: never; Returns: boolean }
       mark_notification_read: {
         Args: { p_notification_id?: string }
         Returns: undefined
       }
+      my_access: { Args: never; Returns: Json }
+      my_effective_grants: {
+        Args: never
+        Returns: {
+          assignment_id: string
+          permission_key: string
+          role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
+      my_role_set: {
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"][]
+      }
+      perm_scope: { Args: { p_key: string }; Returns: string[] }
+      portal_student_ids: { Args: never; Returns: string[] }
       receivables_aging: {
         Args: {
           p_grade_id?: string
@@ -1243,9 +1558,9 @@ export type Database = {
         }
         Returns: Json
       }
-      sms_credit_balance: { Args: { p_school_id: string }; Returns: number }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      sms_credit_balance: { Args: { p_school_id: string }; Returns: number }
       student_balance: { Args: { p_student_id: string }; Returns: number }
       student_directory: {
         Args: {
@@ -1332,6 +1647,7 @@ export type Database = {
           receipt_no: number
         }[]
       }
+      student_stage_id: { Args: { p_student_id: string }; Returns: string }
       student_statement: {
         Args: { p_student_id: string }
         Returns: {
@@ -1344,6 +1660,7 @@ export type Database = {
         }[]
       }
       subscription_state: { Args: { p_school_id: string }; Returns: string }
+      teacher_section_ids: { Args: never; Returns: string[] }
       topup_sms_credit: {
         Args: {
           p_amount: number
@@ -1358,8 +1675,20 @@ export type Database = {
       }
     }
     Enums: {
+      access_audit_action:
+        | "invitation_sent"
+        | "invitation_accepted"
+        | "invitation_revoked"
+        | "invitation_expired"
+        | "role_added"
+        | "role_removed"
+        | "stage_scope_changed"
+        | "user_deactivated"
+        | "user_reactivated"
+        | "optional_permission_changed"
       account_type: "cash" | "bank"
       discount_kind: "percentage" | "fixed" | "sibling_waiver"
+      invitation_state: "pending" | "accepted" | "revoked" | "expired"
       money_event_type:
         | "fee_payment"
         | "expense"
@@ -1370,8 +1699,19 @@ export type Database = {
         | "payment_recorded"
         | "low_sms_credit"
         | "subscription_expiring"
+      portal_link_kind: "guardian" | "self"
       student_status: "active" | "withdrawn" | "graduated"
-      user_role: "super_admin" | "school_admin" | "accountant" | "viewer"
+      user_role:
+        | "super_admin"
+        | "school_admin"
+        | "accountant"
+        | "viewer"
+        | "principal"
+        | "student_affairs"
+        | "teacher"
+        | "guardian"
+        | "student"
+      user_status: "invited" | "active" | "deactivated"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1387,12 +1727,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1416,11 +1756,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1441,11 +1781,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1466,11 +1806,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1483,11 +1823,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1499,8 +1839,21 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      access_audit_action: [
+        "invitation_sent",
+        "invitation_accepted",
+        "invitation_revoked",
+        "invitation_expired",
+        "role_added",
+        "role_removed",
+        "stage_scope_changed",
+        "user_deactivated",
+        "user_reactivated",
+        "optional_permission_changed",
+      ],
       account_type: ["cash", "bank"],
       discount_kind: ["percentage", "fixed", "sibling_waiver"],
+      invitation_state: ["pending", "accepted", "revoked", "expired"],
       money_event_type: [
         "fee_payment",
         "expense",
@@ -1513,8 +1866,20 @@ export const Constants = {
         "low_sms_credit",
         "subscription_expiring",
       ],
+      portal_link_kind: ["guardian", "self"],
       student_status: ["active", "withdrawn", "graduated"],
-      user_role: ["super_admin", "school_admin", "accountant", "viewer"],
+      user_role: [
+        "super_admin",
+        "school_admin",
+        "accountant",
+        "viewer",
+        "principal",
+        "student_affairs",
+        "teacher",
+        "guardian",
+        "student",
+      ],
+      user_status: ["invited", "active", "deactivated"],
     },
   },
 } as const
