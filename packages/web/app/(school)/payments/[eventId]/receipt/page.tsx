@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { requirePermission } from '../../../../../lib/auth/guard.js';
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server.js';
 import { formatDateTime } from '../../../../../lib/format/date.js';
 import { formatCurrency } from '../../../../../lib/format/currency.js';
@@ -20,6 +21,7 @@ interface EventRow {
 
 /** Fee-payment receipt page (US3). */
 export default async function ReceiptPage({ params }: { params: { eventId: string } }) {
+  await requirePermission('finance.read');
   const supabase = createSupabaseServerClient();
 
   const { data: event } = await supabase

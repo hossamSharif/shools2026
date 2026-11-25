@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { accountBalance } from '../../../../lib/queries/balances.js';
 import { formatCurrency } from '../../../../lib/format/currency.js';
 import { AccountForm } from '../../../../components/settings/account-form.js';
@@ -15,6 +16,7 @@ interface AccountRow {
 
 /** Accounts list (with live balance) + create form (US2). */
 export default async function AccountsPage() {
+  await requirePermission('finance.read');
   const supabase = createSupabaseServerClient();
   const { data } = await supabase
     .from('account')

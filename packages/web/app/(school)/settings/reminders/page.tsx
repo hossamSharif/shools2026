@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import {
   ReminderRulesTable,
   type ReminderRuleRow,
@@ -7,6 +8,7 @@ import { SettingsNav } from '../../../../components/settings/settings-nav.js';
 
 /** Reminder-rules config UI (T121): enable/disable + change before/after days. */
 export default async function RemindersSettingsPage() {
+  await requirePermission('finance.read');
   const supabase = createSupabaseServerClient();
   const { data } = await supabase
     .from('reminder_rule')

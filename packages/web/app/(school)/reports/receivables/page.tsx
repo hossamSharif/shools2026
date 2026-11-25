@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@erp/ui';
-import { requireAuth } from '../../../../lib/auth/guard.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
 import { receivablesAging, bucketTotals } from '../../../../lib/queries/receivables.js';
 import { formatCurrency } from '../../../../lib/format/currency.js';
@@ -13,7 +13,7 @@ export default async function ReceivablesPage({
 }: {
   searchParams: { stageId?: string; gradeId?: string; sectionId?: string };
 }) {
-  const ctx = await requireAuth();
+  const ctx = await requirePermission('finance.read');
   if (!ctx.schoolId) {
     return (
       <div dir="rtl">
@@ -26,7 +26,11 @@ export default async function ReceivablesPage({
   const [{ data: stages }, { data: grades }, { data: sections }] = await Promise.all([
     supabase.from('stage').select('id, label_ar').order('ordinal'),
     supabase.from('grade').select('id, label_ar, stage_id').order('ordinal'),
-    supabase.from('section').select('id, name, grade_id').eq('school_id', ctx.schoolId).order('name'),
+    supabase
+      .from('section')
+      .select('id, name, grade_id')
+      .eq('school_id', ctx.schoolId)
+      .order('name'),
   ]);
 
   const rows = await receivablesAging({

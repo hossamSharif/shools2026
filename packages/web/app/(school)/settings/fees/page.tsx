@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { FeeStructureBuilder } from '../../../../components/settings/fee-structure-builder.js';
 import { SettingsNav } from '../../../../components/settings/settings-nav.js';
 
@@ -14,6 +15,7 @@ interface YearRow {
 
 /** Fee-structure builder: grade + year + fee items + installment schedule (US2). */
 export default async function FeesPage() {
+  await requirePermission('finance.read');
   const supabase = createSupabaseServerClient();
   const [{ data: grades }, { data: years }] = await Promise.all([
     supabase

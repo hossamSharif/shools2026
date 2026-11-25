@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { AdjustmentForm } from '../../../../components/money/adjustment-form.js';
 
 interface StudentRow {
@@ -8,6 +9,7 @@ interface StudentRow {
 
 /** Record a student-ledger adjustment (US4). */
 export default async function NewAdjustmentPage() {
+  await requirePermission('finance.write');
   const supabase = createSupabaseServerClient();
   const { data: students } = await supabase
     .from('student')

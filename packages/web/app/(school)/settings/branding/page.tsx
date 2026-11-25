@@ -1,4 +1,4 @@
-import { requireAuth } from '../../../../lib/auth/guard.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
 import { schoolLogoUrl } from '../../../../lib/storage/school-logo.js';
 import { SchoolLogoForm } from '../../../../components/settings/school-logo-form.js';
@@ -6,7 +6,7 @@ import { SettingsNav } from '../../../../components/settings/settings-nav.js';
 
 /** School branding — logo upload (school_admin only writes; RLS-enforced). */
 export default async function BrandingSettingsPage() {
-  const ctx = await requireAuth();
+  const ctx = await requirePermission('settings.read');
   if (!ctx.schoolId) throw new Error('no school context');
   const supabase = createSupabaseServerClient();
 
@@ -20,7 +20,9 @@ export default async function BrandingSettingsPage() {
     <div dir="rtl" className="space-y-6">
       <h1 className="text-2xl font-bold">الهوية البصرية</h1>
       <SettingsNav current="/settings/branding" />
-      <SchoolLogoForm currentLogoUrl={schoolLogoUrl(school?.logo_path ?? null)} />
+      {ctx.permissions.has('settings.manage') && (
+        <SchoolLogoForm currentLogoUrl={schoolLogoUrl(school?.logo_path ?? null)} />
+      )}
     </div>
   );
 }

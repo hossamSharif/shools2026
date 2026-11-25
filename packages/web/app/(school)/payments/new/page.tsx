@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { PaymentForm } from '../../../../components/payments/payment-form.js';
 
 interface StudentRow {
@@ -21,6 +22,7 @@ export default async function NewPaymentPage({
 }: {
   searchParams: { studentId?: string };
 }) {
+  await requirePermission('finance.write');
   const supabase = createSupabaseServerClient();
   const [{ data: students }, { data: accounts }] = await Promise.all([
     supabase

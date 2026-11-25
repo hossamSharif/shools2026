@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { YearsManager } from '../../../../components/settings/years-manager.js';
 import { SettingsNav } from '../../../../components/settings/settings-nav.js';
 
@@ -11,6 +12,7 @@ interface YearRow {
 
 /** Academic years list + create + mark-current (US2). */
 export default async function YearsPage() {
+  await requirePermission('structure.read');
   const supabase = createSupabaseServerClient();
   const { data } = await supabase
     .from('academic_year')

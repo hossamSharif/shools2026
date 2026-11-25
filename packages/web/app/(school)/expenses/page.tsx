@@ -1,5 +1,5 @@
 import { ReceiptText, CalendarDays, Filter, Hash } from 'lucide-react';
-import { requireAuth } from '../../../lib/auth/guard.js';
+import { requirePermission } from '../../../lib/auth/guard.js';
 import { createSupabaseServerClient } from '../../../lib/supabase/server.js';
 import { listExpenses, expenseCategories } from '../../../lib/queries/money-events.js';
 import { formatCurrency } from '../../../lib/format/currency.js';
@@ -29,7 +29,7 @@ export default async function ExpensesPage({
 }: {
   searchParams: ExpensesSearchParams;
 }) {
-  const ctx = await requireAuth();
+  const ctx = await requirePermission('finance.write');
   if (!ctx.schoolId) {
     return (
       <div dir="rtl">

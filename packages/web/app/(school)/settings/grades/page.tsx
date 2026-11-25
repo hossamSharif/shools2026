@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { GradeSections } from '../../../../components/settings/grade-sections.js';
 import { SettingsNav } from '../../../../components/settings/settings-nav.js';
 
@@ -16,6 +17,7 @@ interface SectionRow {
 
 /** Read-only fixed grades + per-grade sections create (US2). */
 export default async function GradesPage() {
+  await requirePermission('structure.read');
   const supabase = createSupabaseServerClient();
 
   const [{ data: grades }, { data: sections }] = await Promise.all([

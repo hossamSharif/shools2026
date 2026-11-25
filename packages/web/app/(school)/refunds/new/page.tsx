@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { RefundForm } from '../../../../components/money/refund-form.js';
 
 interface StudentRow {
@@ -13,10 +14,19 @@ interface AccountRow {
 
 /** Record refund to a student (US4). */
 export default async function NewRefundPage() {
+  await requirePermission('finance.write');
   const supabase = createSupabaseServerClient();
   const [{ data: students }, { data: accounts }] = await Promise.all([
-    supabase.from('student').select('id, name').order('name', { ascending: true }).returns<StudentRow[]>(),
-    supabase.from('account').select('id, name, type').order('name', { ascending: true }).returns<AccountRow[]>(),
+    supabase
+      .from('student')
+      .select('id, name')
+      .order('name', { ascending: true })
+      .returns<StudentRow[]>(),
+    supabase
+      .from('account')
+      .select('id, name, type')
+      .order('name', { ascending: true })
+      .returns<AccountRow[]>(),
   ]);
 
   return (

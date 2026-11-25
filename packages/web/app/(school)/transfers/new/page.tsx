@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { TransferForm } from '../../../../components/money/transfer-form.js';
 
 interface AccountRow {
@@ -9,6 +10,7 @@ interface AccountRow {
 
 /** Record transfer between accounts (US4). */
 export default async function NewTransferPage() {
+  await requirePermission('finance.write');
   const supabase = createSupabaseServerClient();
   const { data: accounts } = await supabase
     .from('account')

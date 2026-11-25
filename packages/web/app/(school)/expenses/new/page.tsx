@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
 import { ExpenseForm } from '../../../../components/money/expense-form.js';
 
 interface AccountRow {
@@ -9,6 +10,7 @@ interface AccountRow {
 
 /** Record expense (US4). */
 export default async function NewExpensePage() {
+  await requirePermission('finance.write');
   const supabase = createSupabaseServerClient();
   const { data: accounts } = await supabase
     .from('account')
