@@ -5,12 +5,22 @@ import { getSmsProvider } from '../providers/index.js';
 import { requireInternalToken } from '../middleware/internal-auth.js';
 import { requireSmsEnabled } from '../middleware/sms-enabled.js';
 import { buildReminderMessage } from '../dispatch/run-dispatch.js';
+import {
+  createUserScopedClient,
+  forbiddenCode,
+  requireUserJwt,
+} from '../middleware/user-client.js';
 
 /**
  * POST /internal/dispatch/manual (T118) — a single manual reminder for one
  * student, triggered from the tenant UI's "send reminder" button. Same
  * credit/atomicity/logging rules as the batch dispatcher; gated by the same
  * internal token and write-gating (DISPATCH_PAUSED).
+ *
+ * Spec 002 (rpc-contracts §D): the request must carry the acting user's access
+ * token in `x-user-jwt`. Before anything is logged, charged or sent, the worker
+ * calls `authorize_manual_sms` AS THAT USER; a FORBIDDEN_* refusal returns 403
+ * and nothing happens. The dispatch path below is otherwise unchanged.
  */
 export const dispatchManualRouter: RouterType = Router();
 
@@ -19,6 +29,7 @@ export const dispatchManualRouter: RouterType = Router();
 dispatchManualRouter.post(
   '/internal/dispatch/manual',
   requireInternalToken,
+  requireUserJwt,
   requireSmsEnabled,
   async (req, res) => {
     const parsed = ManualReminderInput.safeParse(req.body);
@@ -26,6 +37,22 @@ dispatchManualRouter.post(
       return res.status(400).json({ error: 'INVALID_INPUT', details: parsed.error.flatten() });
     }
     const { school_id, student_id, installment_id, idempotency_key } = parsed.data;
+
+    // Authorization as the requesting user (sms.send_manual + student in scope).
+    const userClient = createUserScopedClient(res.locals.userJwt as string);
+    // TODO(T037): drop the cast once 0042 is applied and DB types are regenerated.
+    const { error: authzErr } = await userClient.rpc(
+      'authorize_manual_sms' as never,
+      { p_student_id: student_id } as never,
+    );
+    if (authzErr) {
+      const code = forbiddenCode(authzErr);
+      if (code) return res.status(403).json({ error: code });
+      if (authzErr.code === '42501' || /JWT|jwt/.test(authzErr.message ?? '')) {
+        return res.status(401).json({ error: 'UNAUTHORIZED' });
+      }
+      return res.status(500).json({ error: 'INTERNAL_ERROR' });
+    }
 
     const supabase = createSupabaseServiceClient();
 
