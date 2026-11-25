@@ -132,14 +132,12 @@ d('access foundation (0033–0037)', () => {
     });
 
     it('cannot store a never-grantable switch: (teacher, finance.read) is an FK violation (SC-009)', async () => {
-      const { error } = await service
-        .from('school_role_permission')
-        .insert({
-          school_id: fx.schoolA,
-          role: 'teacher',
-          permission_key: 'finance.read',
-          enabled: true,
-        });
+      const { error } = await service.from('school_role_permission').insert({
+        school_id: fx.schoolA,
+        role: 'teacher',
+        permission_key: 'finance.read',
+        enabled: true,
+      });
       expect(error).not.toBeNull();
       expect(error!.code).toBe('23503');
     });
