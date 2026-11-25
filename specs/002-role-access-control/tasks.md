@@ -152,7 +152,7 @@ assertion edits. The baseline matrix rows for the Phase 1 roles match.
 
 ### Tests for User Story 2
 
-- [ ] T035 [P] [US2] Write `packages/database/src/access/phase1-baseline.test.ts`: as `adminA`, `accountant` and `viewer`, every Phase 1 data set returns the **same row ids** as a service-role read filtered to School A (read parity). The accountant can still call each money RPC, upsert a student, create a section/year/account/fee structure and enroll. The viewer is refused every write. The super-admin gets 0 rows from every finance table and from `access_audit_entry`, and still manages `school`/`subscription`/`sms_credit_topup` (US2-1..3, FR-024).
+- [x] T035 [P] [US2] Write `packages/database/src/access/phase1-baseline.test.ts`: as `adminA`, `accountant` and `viewer`, every Phase 1 data set returns the **same row ids** as a service-role read filtered to School A (read parity). The accountant can still call each money RPC, upsert a student, create a section/year/account/fee structure and enroll. The viewer is refused every write. The super-admin gets 0 rows from every finance table and from `access_audit_entry`, and still manages `school`/`subscription`/`sms_credit_topup` (US2-1..3, FR-024).
 - [ ] T036 [P] [US2] Write `packages/database/src/access/migration-backfill.test.ts`: for every pre-existing `public.user` row (seeded through `createAuthedUser`, the Phase 1 helper), there is exactly one assignment equal to `user.role`, with no stages, and `my_access().roles` equals `[user.role]` (US2-4).
 
 ### Implementation for User Story 2
