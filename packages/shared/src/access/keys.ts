@@ -362,6 +362,54 @@ export const ROLE_DEFAULTS: Readonly<Record<Role, readonly PermissionKey[]>> = {
 };
 
 // ---------------------------------------------------------------------------
+// Relationship-scoped grants: the (rel) cells of access-matrix §1/§2. Such a
+// grant gives no direct rows; access comes only through a relationship helper
+// (teacher_section_ids, portal_student_ids). perm_scope() returns '{}' for it.
+// ---------------------------------------------------------------------------
+
+const TEACHER_REL = [
+  'students.read_limited',
+  'structure.read',
+  'academics.view',
+  'attendance.view',
+  'attendance.create',
+  'attendance.edit',
+  'homework.view',
+  'homework.create',
+  'homework.edit',
+  'homework.publish',
+  'exams.view',
+  'exams.create',
+  'exams.edit',
+  'announcements.view',
+  'announcements.create',
+] as const satisfies readonly PermissionKey[];
+
+const PORTAL_REL = [
+  'academics.view',
+  'attendance.view',
+  'homework.view',
+  'exams.view',
+  'announcements.view',
+] as const satisfies readonly PermissionKey[];
+
+/** Defaults flagged `relationship_scoped` in `role_permission_default`. */
+export const RELATIONSHIP_SCOPED_DEFAULTS: Readonly<
+  Partial<Record<Role, readonly PermissionKey[]>>
+> = {
+  teacher: TEACHER_REL,
+  guardian: ['portal.linked', ...PORTAL_REL],
+  student: ['portal.self', ...PORTAL_REL],
+};
+
+/** Optional switches flagged `relationship_scoped` in `optional_permission`. */
+export const RELATIONSHIP_SCOPED_OPTIONAL: Readonly<
+  Partial<Record<Role, readonly PermissionKey[]>>
+> = {
+  teacher: ['students.guardian_contact', 'announcements.publish_own'],
+};
+
+// ---------------------------------------------------------------------------
 // Optional switches (FR-010). No principal finance switch (constitution XIV, R15).
 // ---------------------------------------------------------------------------
 

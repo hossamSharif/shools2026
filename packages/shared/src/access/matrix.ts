@@ -317,13 +317,17 @@ function expectationsFor(user: FixtureUser): Record<DataSetOrFn, Expectation> {
     write: has('finance.write') ? 'allowed' : 'refused',
   };
 
-  // The fixture seeds notifications for School A users only.
+  // The fixture seeds all three types for every School A user. In School B the
+  // only notification is the payment_recorded that adminB's own fixture
+  // payment emits to its actor.
   const notificationTypes =
     profile.school === 'A'
       ? has('finance.read')
         ? [...ALL_NOTIFICATION_TYPES]
         : ['subscription_expiring']
-      : [];
+      : profile.school === 'B' && has('finance.write')
+        ? ['payment_recorded']
+        : [];
 
   const out: Record<string, Expectation> = {
     school: isSuper

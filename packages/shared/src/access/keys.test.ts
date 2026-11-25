@@ -68,3 +68,18 @@ describe('permission vocabulary', () => {
     expect(primaryRole([])).toBeNull();
   });
 });
+
+describe('relationship-scoped grants', () => {
+  it('flag only keys the role actually holds', async () => {
+    const { RELATIONSHIP_SCOPED_DEFAULTS, RELATIONSHIP_SCOPED_OPTIONAL } =
+      await import('./keys.js');
+    for (const [role, keys] of Object.entries(RELATIONSHIP_SCOPED_DEFAULTS)) {
+      for (const k of keys ?? [])
+        expect(ROLE_DEFAULTS[role as keyof typeof ROLE_DEFAULTS]).toContain(k);
+    }
+    for (const [role, keys] of Object.entries(RELATIONSHIP_SCOPED_OPTIONAL)) {
+      for (const k of keys ?? [])
+        expect(OPTIONAL_PERMISSIONS.some((o) => o.role === role && o.key === k)).toBe(true);
+    }
+  });
+});

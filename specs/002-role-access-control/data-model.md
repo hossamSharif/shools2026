@@ -138,6 +138,13 @@ Grants: `select` to authenticated (unchanged). No insert/update/delete.
 | role | user_role, PK part |
 | permission_key | text → permission, PK part |
 
+- **`relationship_scoped boolean not null default false`** (added by 0038, on this table and on
+  `optional_permission`): marks the "(rel)" cells of contracts/access-matrix.md, such as a
+  teacher's `structure.read`, the portal keys and the teacher/portal module keys. Such a grant
+  gives no direct rows. `perm_scope()` returns `'{}'` for it, and access comes only through
+  `teacher_section_ids()` / `portal_student_ids()`. Mirrored as `RELATIONSHIP_SCOPED_*` in
+  `@erp/shared/access`.
+
 ### `public.optional_permission` (FR-010 catalogue)
 | Column | Type | Notes |
 |---|---|---|
