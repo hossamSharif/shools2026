@@ -231,3 +231,50 @@ instead on the live database, as real `authenticated` sessions, inside blocks th
     (back to teacher).
 
   **Fixed.**
+
+## US1 migrations 0038–0041: local verification (before owner review, T028–T032)
+
+Throwaway local Postgres 16 with stub Supabase `auth`/`storage` schemas and Supabase-like default
+privileges. The schema was built from the repository (Phase 1 through 0037a), and the
+`buildAccessFixture` population was seeded with fixed ids: School A with X (Primary), Y (Middle)
+and Z (withdrawn, not enrolled), School B, all 15 fixture users, portal links, an SMS log, the
+notifications, and payments through the real `apply_fee_payment`. A SQL prober then queried
+every table and read function as each user's own `authenticated` session, and a Node evaluator
+graded the results against `ACCESS_EXPECTATIONS` (`@erp/shared/access`). Snapshots of the
+database were taken before and after the migrations.
+
+0039's bodies were taken from the live database (`pg_get_functiondef`), not from the repo files.
+
+| Check | Before 0038 | After 0038–0041 |
+|---|---|---|
+| Read matrix (15 users × 28 tables + 11 read functions + internal functions) | 352 failures | **all met** |
+| Write matrix (money RPCs, table writes, top-up, reverse) | 140 of 249 failed (e.g. teacher and viewer post payments, teacher creates students) | **all 249 met** |
+| `audit_access_policies()` | 28 `signed_in_only_policy`, 7 `role_column_authz` | **0 violations** |
+| Phase 1 parity: adminA, adminA2, accountant, viewer, adminB (every table, full `dashboard_kpis`, directory rows) | baseline | **0 differences** |
+| Low-SMS-credit recipients (0040) | admin, admin2, accountant | **the same three** (not viewer, not principal + viewer) |
+
+Two fixes were made while verifying:
+
+- In 0038, `x = any((select f()))` is parsed as a subquery comparison. It is now
+  `= any((select f())::uuid[])`, which is still evaluated once per statement.
+- In 0041, the audit's own body matched its `current_role()` pattern, so the function now
+  excludes itself.
+
+Design additions found necessary while writing the migrations (owner review):
+
+- **Relationship-scoped grants (0038).** Without them, a teacher's `structure.read` would have
+  shown every section and year. `role_permission_default` and `optional_permission` get a
+  `relationship_scoped` flag, and `perm_scope()` gives such grants no direct scope.
+- **`*_unchecked` copies (0039).** `account_balance`, `installment_running_balance`,
+  `student_balance`, `sms_credit_balance`, `dashboard_kpis`, `student_directory`,
+  `student_financial_summary` and `student_installments` keep their unchanged bodies under
+  internal names, executable only by the owner and `service_role`. The masked directory,
+  guardian summary and principal totals compute through these, and the exposed names decide
+  access. The totals subset is taken from the full computation; it does not re-implement the
+  aggregates.
+- **0040 recipients** are `finance.write` holders (T031), not `finance.read` (rpc-contracts §E),
+  because `finance.read` would newly notify viewers.
+- **0041** revokes anon EXECUTE on `update_own_display_name`. The reviewed allow-list is a separate
+  `reviewed_definer_functions()` that later migrations extend.
+
+**Next: T033 owner review gate (RLS + money functions).** Not yet applied to the live database.
