@@ -45,7 +45,8 @@ function expectForbiddenSchool(error: { message?: string } | null): void {
 
 d('hotfix 0032a: definer exposure', () => {
   const service = getServiceClient()!;
-  const anon = anonClient();
+  // Created lazily: describe.skip still runs this body when the env is unset.
+  const anon = INTEGRATION_ENV_READY ? anonClient() : (null as unknown as SupabaseClient);
 
   let schoolA: string;
   let schoolB: string;
