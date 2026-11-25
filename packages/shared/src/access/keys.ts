@@ -124,7 +124,14 @@ export const PERMISSION_KEYS = [
   p('finance.export', 'finance', 'export', false, true, 'تصدير التقارير المالية'),
   p('sms.send_manual', 'sms', 'send', true, true, 'إرسال رسائل SMS يدوية'),
   p('students.read', 'students', 'view', true, true, 'عرض بيانات الطلاب'),
-  p('students.read_limited', 'students', 'view_limited', true, true, 'عرض بيانات طلاب الفصول المسندة'),
+  p(
+    'students.read_limited',
+    'students',
+    'view_limited',
+    true,
+    true,
+    'عرض بيانات طلاب الفصول المسندة',
+  ),
   p('students.guardian_contact', 'students', 'view_guardian', true, true, 'عرض بيانات ولي الأمر'),
   p('students.fee_indicator', 'students', 'view_fee_indicator', true, true, 'عرض مؤشر حالة الرسوم'),
   p('students.write', 'students', 'edit', true, true, 'تسجيل الطلاب وتعديل بياناتهم'),
@@ -162,7 +169,14 @@ export const PERMISSION_KEYS = [
   p('announcements.edit', 'announcements', 'edit', true, false, 'الإعلانات: تعديل'),
   p('announcements.approve', 'announcements', 'approve', true, false, 'الإعلانات: اعتماد'),
   p('announcements.publish', 'announcements', 'publish', true, false, 'الإعلانات: نشر'),
-  p('announcements.publish_own', 'announcements', 'publish_own', true, false, 'الإعلانات: نشر إعلاناته الخاصة'),
+  p(
+    'announcements.publish_own',
+    'announcements',
+    'publish_own',
+    true,
+    false,
+    'الإعلانات: نشر إعلاناته الخاصة',
+  ),
   p('cms.view', 'cms', 'view', false, false, 'موقع المدرسة: عرض'),
   p('cms.create', 'cms', 'create', false, false, 'موقع المدرسة: إضافة'),
   p('cms.edit', 'cms', 'edit', false, false, 'موقع المدرسة: تعديل'),
@@ -184,10 +198,31 @@ export function isPermissionKey(key: string): key is PermissionKey {
 // Defaults (the D cells of access-matrix §1 and the §2 defaults)
 // ---------------------------------------------------------------------------
 
-const ACADEMICS_ALL = ['academics.view', 'academics.create', 'academics.edit', 'academics.approve'] as const;
-const ATTENDANCE_ALL = ['attendance.view', 'attendance.create', 'attendance.edit', 'attendance.approve'] as const;
-const HOMEWORK_ALL = ['homework.view', 'homework.create', 'homework.edit', 'homework.publish'] as const;
-const EXAMS_ALL = ['exams.view', 'exams.create', 'exams.edit', 'exams.approve', 'exams.publish'] as const;
+const ACADEMICS_ALL = [
+  'academics.view',
+  'academics.create',
+  'academics.edit',
+  'academics.approve',
+] as const;
+const ATTENDANCE_ALL = [
+  'attendance.view',
+  'attendance.create',
+  'attendance.edit',
+  'attendance.approve',
+] as const;
+const HOMEWORK_ALL = [
+  'homework.view',
+  'homework.create',
+  'homework.edit',
+  'homework.publish',
+] as const;
+const EXAMS_ALL = [
+  'exams.view',
+  'exams.create',
+  'exams.edit',
+  'exams.approve',
+  'exams.publish',
+] as const;
 const ANNOUNCEMENTS_ALL = [
   'announcements.view',
   'announcements.create',
@@ -338,12 +373,42 @@ export interface OptionalPermissionDef {
 }
 
 export const OPTIONAL_PERMISSIONS = [
-  { role: 'teacher', key: 'students.guardian_contact', defaultEnabled: false, labelAr: 'عرض بيانات ولي الأمر' },
-  { role: 'teacher', key: 'announcements.publish_own', defaultEnabled: false, labelAr: 'نشر إعلاناته الخاصة' },
-  { role: 'student_affairs', key: 'students.fee_indicator', defaultEnabled: false, labelAr: 'عرض مؤشر حالة الرسوم' },
-  { role: 'student_affairs', key: 'sms.send_manual', defaultEnabled: false, labelAr: 'إرسال رسائل SMS يدوية' },
-  { role: 'principal', key: 'structure.write', defaultEnabled: false, labelAr: 'تعديل السنوات الدراسية والفصول' },
-  { role: 'viewer', key: 'finance.export', defaultEnabled: true, labelAr: 'تصدير التقارير المالية' },
+  {
+    role: 'teacher',
+    key: 'students.guardian_contact',
+    defaultEnabled: false,
+    labelAr: 'عرض بيانات ولي الأمر',
+  },
+  {
+    role: 'teacher',
+    key: 'announcements.publish_own',
+    defaultEnabled: false,
+    labelAr: 'نشر إعلاناته الخاصة',
+  },
+  {
+    role: 'student_affairs',
+    key: 'students.fee_indicator',
+    defaultEnabled: false,
+    labelAr: 'عرض مؤشر حالة الرسوم',
+  },
+  {
+    role: 'student_affairs',
+    key: 'sms.send_manual',
+    defaultEnabled: false,
+    labelAr: 'إرسال رسائل SMS يدوية',
+  },
+  {
+    role: 'principal',
+    key: 'structure.write',
+    defaultEnabled: false,
+    labelAr: 'تعديل السنوات الدراسية والفصول',
+  },
+  {
+    role: 'viewer',
+    key: 'finance.export',
+    defaultEnabled: true,
+    labelAr: 'تصدير التقارير المالية',
+  },
 ] as const satisfies readonly OptionalPermissionDef[];
 
 /** Zod schema + exported type live in schemas/access.ts (`OptionalPermissionKey`). */
