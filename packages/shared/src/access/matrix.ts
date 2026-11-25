@@ -249,7 +249,8 @@ function readableStudents(profile: FixtureProfile, user: FixtureUser): FixtureSt
   return [...out].sort();
 }
 
-const ENROLLED: readonly FixtureStudent[] = ['X', 'Y', 'B'];
+/** Students with a current-year enrollment (B is paid directly, not enrolled). */
+const ENROLLED: readonly FixtureStudent[] = ['X', 'Y'];
 
 function expectationsFor(user: FixtureUser): Record<DataSetOrFn, Expectation> {
   const profile = FIXTURE_PROFILES[user];
@@ -316,11 +317,13 @@ function expectationsFor(user: FixtureUser): Record<DataSetOrFn, Expectation> {
     write: has('finance.write') ? 'allowed' : 'refused',
   };
 
-  const notificationTypes = inSchool
-    ? has('finance.read')
-      ? [...ALL_NOTIFICATION_TYPES]
-      : ['subscription_expiring']
-    : [];
+  // The fixture seeds notifications for School A users only.
+  const notificationTypes =
+    profile.school === 'A'
+      ? has('finance.read')
+        ? [...ALL_NOTIFICATION_TYPES]
+        : ['subscription_expiring']
+      : [];
 
   const out: Record<string, Expectation> = {
     school: isSuper

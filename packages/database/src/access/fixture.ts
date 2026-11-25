@@ -45,7 +45,7 @@ export interface AccessFixture {
   yearA: string;
   sections: { primary: string; middle: string };
   feeStructures: { primary: string; middle: string };
-  accounts: { A: string; B: string };
+  accounts: { A: string; A2: string; B: string };
   students: Record<FixtureStudent, string>;
   enrollments: { X: string; Y: string };
   installments: { X: string[]; Y: string[]; B: string[] };
@@ -200,6 +200,7 @@ export async function buildAccessFixture(service: SupabaseClient): Promise<Acces
     const fsP = await feeStructure(service, schoolA, primary.gradeId, year.id);
     const fsM = await feeStructure(service, schoolA, middle.gradeId, year.id);
     const accountA = await newAccount(service, schoolA, 500);
+    const accountA2 = await newAccount(service, schoolA, 0);
 
     // ── Students ──────────────────────────────────────────────────────────
     const insertStudent = async (schoolId: string, name: string, status = 'active') =>
@@ -386,7 +387,7 @@ export async function buildAccessFixture(service: SupabaseClient): Promise<Acces
       yearA: year.id,
       sections: { primary: secP.id, middle: secM.id },
       feeStructures: { primary: fsP, middle: fsM },
-      accounts: { A: accountA, B: accountB },
+      accounts: { A: accountA, A2: accountA2, B: accountB },
       students: { X, Y, Z, B },
       enrollments: { X: enrX, Y: enrY },
       installments: { X: instX, Y: instY, B: instB },
