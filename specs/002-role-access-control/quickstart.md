@@ -19,6 +19,7 @@ expose nothing new).
 | 0035 | `0035_permission_catalogue.sql` | `permission`, `role_permission_default`, `optional_permission`, `school_role_permission` + seeds from contracts/access-matrix.md | foundational |
 | 0036 | `0036_portal_link.sql` | minimal link table (service-role writes only); created before the helpers that read it | foundational |
 | 0037 | `0037_access_helpers.sql` | `current_school_id()` v2, `has_perm`, `perm_scope`, `can_read_student`, `can_write_student`, `teacher_section_ids` (empty), `portal_student_ids`, `assert_perm`, `my_access` | foundational |
+| 0037a | `0037a_scope_access_sync_flag.sql` | forward fix for 0034: `trg_role_assignment_sync_primary` restores `app.access_sync` after its own UPDATE, so the role-model bypass does not leak to the rest of the transaction (found in T022 live verification) | foundational |
 | 0038 | `0038_rewrite_tenant_policies.sql` | drop every Phase 1 `*_tenant_*` policy and create the role-aware ones (data-model §10), storage policies | US1 |
 | 0039 | `0039_harden_derived_and_money_functions.sql` | §E permission checks (**money migration**) | US1 |
 | 0040 | `0040_notification_recipients.sql` | emitters target `finance.read` holders | US1 |
