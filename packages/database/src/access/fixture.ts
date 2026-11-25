@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { FixtureStudent, FixtureUser } from '@erp/shared/access';
 import {
   createAuthedStaff,
   linkPortal,
@@ -27,27 +28,9 @@ export {
   type CreateAuthedStaffOptions,
 } from '../test-helpers/supabase.js';
 
-export const FIXTURE_USERS = [
-  'adminA',
-  'adminA2',
-  'principal',
-  'principalPrimary',
-  'principalViewer',
-  'sa',
-  'saMiddle',
-  'teacher',
-  'accountant',
-  'viewer',
-  'teacherSa',
-  'guardianX',
-  'studentY',
-  'adminB',
-  'superAdmin',
-] as const;
-export type FixtureUser = (typeof FIXTURE_USERS)[number];
-
-/** Fixture student letters used by `ACCESS_EXPECTATIONS.rowsOf`. */
-export type FixtureStudent = 'X' | 'Y' | 'Z' | 'B';
+// The fixture population and its letters are defined once, with the
+// expectations, in @erp/shared/access (matrix.ts).
+export { FIXTURE_USERS, type FixtureStudent, type FixtureUser } from '@erp/shared/access';
 
 export interface PaymentHandle {
   moneyEventId: string;
