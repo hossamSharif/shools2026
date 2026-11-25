@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireAuth } from '../../../../lib/auth/guard.js';
+import { hasPermission, requireAuth } from '../../../../lib/auth/guard.js';
 import { studentDirectory } from '../../../../lib/queries/students.js';
 import { studentsToCsv } from '../../../../lib/export/students-export.js';
 
@@ -9,6 +9,10 @@ import { studentsToCsv } from '../../../../lib/export/students-export.js';
  */
 export async function GET(request: Request) {
   const ctx = await requireAuth();
+  // Route handlers answer 403 instead of redirecting (contracts/web-routes.md).
+  if (!hasPermission(ctx, 'students.export')) {
+    return NextResponse.json({ error: 'FORBIDDEN_PERMISSION' }, { status: 403 });
+  }
   if (!ctx.schoolId) {
     return NextResponse.json({ error: 'no_school' }, { status: 400 });
   }

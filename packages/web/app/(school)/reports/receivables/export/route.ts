@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
-import { requireAuth } from '../../../../../lib/auth/guard.js';
+import { hasPermission, requireAuth } from '../../../../../lib/auth/guard.js';
 import { receivablesAging } from '../../../../../lib/queries/receivables.js';
 import { receivablesToCsv } from '../../../../../lib/export/receivables-export.js';
 
 /** Tabular (CSV) export of the receivables aging report (US5, T101). */
 export async function GET(request: Request) {
   const ctx = await requireAuth();
+  // Route handlers answer 403 instead of redirecting (contracts/web-routes.md).
+  if (!hasPermission(ctx, 'finance.export')) {
+    return NextResponse.json({ error: 'FORBIDDEN_PERMISSION' }, { status: 403 });
+  }
   if (!ctx.schoolId) {
     return NextResponse.json({ error: 'no_school' }, { status: 400 });
   }
