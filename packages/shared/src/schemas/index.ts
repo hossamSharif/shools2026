@@ -4,3 +4,4 @@ export * from './admin.js';
 export * from './spine.js';
 export * from './money.js';
 export * from './sms.js';
+export * from './access.js';

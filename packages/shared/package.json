@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./money": "./src/money/index.ts",
     "./sms": "./src/sms/index.ts",
+    "./access": "./src/access/index.ts",
     "./schemas": "./src/schemas/index.ts"
   },
   "scripts": {
