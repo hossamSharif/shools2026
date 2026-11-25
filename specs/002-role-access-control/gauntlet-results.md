@@ -143,4 +143,51 @@ This does **not** replace the live apply and checks of T018.
   `money_event`. A `service_role` JWT is allow-all and school-wide, and `anon` is refused
   `my_access` and `has_perm`.
 
-**Next: T018 owner review gate.** Not yet applied to the live database.
+## Foundation 0033–0037: live apply (T018), 2026-11-25
+
+- **Owner approval:** the owner approved in chat ("Go with next step"). The migrations were
+  applied through Supabase MCP `apply_migration`, in order, as `0033_user_role_values`,
+  `0034_role_model`, `0035_permission_catalogue`, `0036_portal_link` and
+  `0037_access_helpers`. All five succeeded.
+- **Pre-check blocker found and resolved:** 10 `public.user` rows pointed to schools that no
+  longer exist, so the 0034 backfill would have failed on the new `role_assignment.school_id`
+  foreign key. These were the 10 Phase 1 test leftovers noted under T011 (`t-*@example.test`
+  accountants created 2026-07-03 and 2026-07-13, with no `money_event`, `audit_entry`,
+  `discount` or `sms_credit_topup` rows). With the owner's approval they were deleted
+  (`auth.users`, cascading to `public.user`) before 0034 was applied. Afterwards there were
+  8 users, 0 orphans and 0 auth identities without a profile.
+- **Checks (`list_tables` and read-only `execute_sql`):**
+  - 7/7 school users have exactly one assignment equal to `user.role`;
+  - 0 stage rows, 0 super-admin assignments, all users `active`;
+  - RLS is enabled and forced on all 7 new tables;
+  - `anon` holds no privilege on any of them, and `authenticated` has `select` only;
+  - catalogue: 49 keys, 138 defaults, 6 optional switches.
+- **Behaviour, as each real user inside a block that always aborts (nothing persisted):**
+  - every user's `current_school_id()` equals their school;
+  - `my_access().roles` = `[user.role]` (super-admin `["super_admin"]`);
+  - key counts: school_admin 44, accountant 12, viewer 8 (the 7 defaults plus the default-on
+    `finance.export`), super-admin 0;
+  - `money_event` visibility is identical to the trusted count for all 8 users (122 for
+    School A's admin, accountant and viewer; 0 for the super-admin);
+  - `user` visibility is unchanged from Phase 1: admins see their school's users, accountants
+    and viewers see themselves, and the super-admin sees the directory.
+- **Security advisor:**
+  - no new lint type;
+  - `anon_security_definer_function_executable` still lists only `update_own_display_name`
+    (pre-existing, T032);
+  - `authenticated_security_definer_function_executable` went from 27 to 38, which is the 11
+    new helpers meant for authenticated callers (`my_access`, `has_perm`, `perm_scope`,
+    `can_read_student`, …). These go on the T032 reviewed allow-list.
+- **Performance advisor, new findings on the new tables** (left for T033/T087, which fix
+  advisor findings with a follow-up migration):
+  - INFO `unindexed_foreign_keys`: `role_assignment.assigned_by`,
+    `role_assignment_stage.stage_id`, `school_role_permission (role, permission_key)` and
+    `changed_by`, `portal_link.school_id`, `user.deactivated_by`, and `permission_key` on
+    `role_permission_default` / `optional_permission`;
+  - WARN `multiple_permissive_policies` on `role_assignment`, `role_assignment_stage` and
+    `portal_link` (own-row and `users.read` select policies, by design; they can be merged into
+    one `OR` policy).
+- **T019:** types regenerated through `generate_typescript_types` into
+  `packages/database/src/types/database.ts`. `pnpm -w typecheck` passes (8/8).
+
+**T018 and T019 closed.** The foundation is live, and Phase 1 behaviour is unchanged.
