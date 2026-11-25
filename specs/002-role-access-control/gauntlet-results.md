@@ -277,4 +277,41 @@ Design additions found necessary while writing the migrations (owner review):
 - **0041** revokes anon EXECUTE on `update_own_display_name`. The reviewed allow-list is a separate
   `reviewed_definer_functions()` that later migrations extend.
 
-**Next: T033 owner review gate (RLS + money functions).** Not yet applied to the live database.
+## US1 migrations 0038–0041: live apply (T033/T034), 2026-11-25
+
+- **Owner approval:** the owner approved in chat ("Yes"). Before applying, a pre-check confirmed
+  the live bodies of the functions 0039 replaces still hash-matched the captured
+  `pg_get_functiondef` versions, and the last migration was still 0037a. Applied through Supabase
+  MCP `apply_migration` in order: `0038_rewrite_tenant_policies`,
+  `0039_harden_derived_and_money_functions`, `0040_notification_recipients`,
+  `0041_policy_audit_function`.
+- **0039 transcription check:** the md5 over the bodies (`prosrc`) of all 27 functions on the live
+  database equals the local database built from the same file (`1539a27d…`, 27/27).
+- **`audit_access_policies()` live:** 0 violations.
+- **Behaviour, as real users inside a block that always aborts (nothing persisted):**
+  - **Phase 1 parity:** all 8 real users (super-admin, 2 school admins, 4 accountants, viewer) see
+    exactly the trusted `money_event` and `student` counts (super-admin: 0 students, 0 money);
+  - **accountant:** `dashboard_kpis` is byte-identical to the full computation, and
+    `apply_fee_payment` posts (receipt 38, rolled back);
+  - **viewer:** `apply_fee_payment` gives `FORBIDDEN_PERMISSION` (Phase 1 gap closed).
+- **Temporary new-role users in the real school (same aborting block):**
+  - **teacher:** 0 money, 0 students, 0 sections, `student_statement` refused;
+  - **principal:** `dashboard_kpis` keys = the totals subset only, 0 money;
+  - **student affairs:** 12 directory rows, all finance columns masked, 0 money;
+  - **guardian:** 1 student (the linked one), `student_financial_summary` works, `student_statement` refused.
+- **Security advisor:**
+  - `anon_security_definer_function_executable` is gone (`update_own_display_name` revoked);
+  - the 38 authenticated-executable definers are exactly `reviewed_definer_functions()`, and no
+    `*_unchecked` function is exposed;
+  - no new lint type.
+- **Performance advisor:**
+  - the three `auth_rls_initplan` warnings are gone (the rewritten policies wrap `auth.uid()`);
+  - remaining: INFO unindexed FKs, and WARN `multiple_permissive_policies` on 8 tables. Five of
+    these are pre-existing super-admin + tenant pairs; three are own-row + `users.read` pairs from
+    0034/0037. Follow-up: merge them into single `OR` policies and add the FK indexes in a small
+    reviewed migration (T087).
+- **T034:** types regenerated into `packages/database/src/types/database.ts`. `pnpm -w typecheck`
+  passes (8/8).
+- **Not yet run:** the Phase 1 Vitest money suite (reconciliation, receipt concurrency, idempotency,
+  write gating) and T024–T027 against the live database. This session has no Supabase keys
+  (`INTEGRATION_ENV_READY` is false). **T033 stays open until those suites run.**
