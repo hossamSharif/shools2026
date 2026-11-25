@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- dashboard_kpis (US6, T104)
 -- One derived KPI bundle for the admin dashboard: per-account + combined

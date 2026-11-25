@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- record_opening_balance — mid-year onboarding: carry in a student's existing
 -- outstanding charge as a single "carried-in" installment (FR-029).

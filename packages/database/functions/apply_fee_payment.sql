@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- apply_fee_payment (US3) — the headline money-in function. Single transaction
 -- (Article I): oldest-outstanding-first default allocation, blocks overpayment,

@@ -1,3 +1,6 @@
+-- NOTE (spec 002): check_low_sms_credit and emit_expiry_notifications were re-created by
+-- migration 0040_notification_recipients.sql (recipients = active finance.write holders,
+-- via school_users_with_perm); that migration holds the deployed bodies.
 -- ============================================================================
 -- emit_notifications (US9) — low-credit and expiring-soon notification helpers.
 -- `payment_recorded` is emitted inline from apply_fee_payment.sql (T132); this

@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- reverse_event (US4) — generic reversing entry (Article III). Posts a new
 -- money_event referencing the original (reverses_event_id); both remain visible;

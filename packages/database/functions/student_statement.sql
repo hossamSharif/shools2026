@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- student_statement (US5, T096)
 -- Ordered ledger of charges/discounts/payments/refunds/adjustments for a

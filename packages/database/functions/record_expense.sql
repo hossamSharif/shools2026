@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- record_expense (US4) — money out from one account with a category (FR-024).
 -- Single transaction; audited; write-gated; idempotent. OWNER REVIEW (Art. XII).

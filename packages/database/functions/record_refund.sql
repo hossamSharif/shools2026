@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- record_refund (US4) — money out to a guardian; adjusts the student ledger;
 -- not counted as an expense (FR-026). OWNER REVIEW (Article XII).

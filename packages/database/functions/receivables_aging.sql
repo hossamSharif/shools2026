@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- receivables_aging (US5, T097)
 -- Unpaid students bucketed by days overdue (current / 1-30 / 31-60 / 61-90 /

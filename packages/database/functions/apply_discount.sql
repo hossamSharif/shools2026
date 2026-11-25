@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- apply_discount (US4) — non-cash reduction of a student's charge
 -- (percentage/fixed/sibling waiver); audited; visible on statement; no cash

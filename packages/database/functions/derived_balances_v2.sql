@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- derived_balances (US4 full) — replaces the Phase-5 baseline to include
 -- transfers, discounts, refunds, and adjustments. Balances remain fully DERIVED

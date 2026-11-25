@@ -1,3 +1,4 @@
+-- NOTE (spec 002): superseded by functions/finance_permission_checks.sql (migration 0039).
 -- ============================================================================
 -- record_adjustment (US4) — write-off/adjustment changing what a student owes;
 -- audited, never a silent edit (FR-027). No cash moves. OWNER REVIEW (Art. XII).
