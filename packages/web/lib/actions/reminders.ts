@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { randomUUID } from 'node:crypto';
 import { createSupabaseServerClient } from '../supabase/server.js';
-import { requireRole } from '../auth/guard.js';
+import { requirePermission } from '../auth/guard.js';
 
 /**
  * Reminder-rule config + manual-reminder trigger (US7). Rule CRUD is plain
@@ -12,15 +12,15 @@ import { requireRole } from '../auth/guard.js';
  * happens in the worker's single-transaction DB function, never in JS.
  */
 
-async function schoolCtx() {
-  const ctx = await requireRole('school_admin', 'accountant');
+async function schoolCtx(permission: 'finance.write' | 'sms.send_manual') {
+  const ctx = await requirePermission(permission);
   const supabase = createSupabaseServerClient();
   if (!ctx.schoolId) throw new Error('no school context');
   return { ctx, supabase, schoolId: ctx.schoolId };
 }
 
 export async function setReminderRuleEnabled(ruleId: string, enabled: boolean): Promise<void> {
-  const { supabase, schoolId } = await schoolCtx();
+  const { supabase, schoolId } = await schoolCtx('finance.write');
   const { error } = await supabase
     .from('reminder_rule')
     .update({ enabled })
@@ -31,7 +31,7 @@ export async function setReminderRuleEnabled(ruleId: string, enabled: boolean): 
 }
 
 export async function updateReminderRuleDays(ruleId: string, days: number): Promise<void> {
-  const { supabase, schoolId } = await schoolCtx();
+  const { supabase, schoolId } = await schoolCtx('finance.write');
   if (!Number.isInteger(days) || days < 0) throw new Error('عدد الأيام غير صالح');
   const { error } = await supabase
     .from('reminder_rule')
@@ -52,7 +52,13 @@ export async function sendManualReminder(
   studentId: string,
   installmentId?: string,
 ): Promise<ManualReminderResult> {
-  const { schoolId } = await schoolCtx();
+  const { schoolId, supabase } = await schoolCtx('sms.send_manual');
+  // The worker re-checks authorization AS THIS USER (authorize_manual_sms),
+  // so forward the session's access token (contracts/worker-endpoints.md).
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session?.access_token) throw new Error('انتهت الجلسة، يرجى تسجيل الدخول مجدداً');
 
   const base = process.env.WORKER_URL;
   const token = process.env.INTERNAL_DISPATCH_TOKEN;
@@ -60,7 +66,11 @@ export async function sendManualReminder(
 
   const res = await fetch(`${base}/internal/dispatch/manual`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${token}`,
+      'x-user-jwt': session.access_token,
+    },
     body: JSON.stringify({
       school_id: schoolId,
       student_id: studentId,
@@ -76,6 +86,9 @@ export async function sendManualReminder(
     }
     if (body.error === 'DISPATCH_PAUSED') {
       throw new Error('الإرسال متوقف — يرجى تجديد الاشتراك');
+    }
+    if (typeof body.error === 'string' && body.error.startsWith('FORBIDDEN')) {
+      throw new Error('لا تملك صلاحية إرسال رسالة لهذا الطالب');
     }
     if (body.error === 'SMS_DISPATCH_DISABLED') {
       throw new Error('خدمة الرسائل غير مفعّلة في هذا النظام');
