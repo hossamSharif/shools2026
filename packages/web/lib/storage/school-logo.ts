@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from '../supabase/server.js';
-import { requireRole } from '../auth/guard.js';
+import { requirePermission } from '../auth/guard.js';
 
 /**
  * School logo upload (settings/branding). Same shape as
@@ -33,7 +33,7 @@ export async function uploadSchoolLogo(input: {
   contentType: (typeof ALLOWED_LOGO_MIME)[number];
   bytes: ArrayBuffer;
 }): Promise<string> {
-  const ctx = await requireRole('school_admin');
+  const ctx = await requirePermission('settings.manage');
   if (!ctx.schoolId) throw new Error('no school context');
   validateLogo(input.contentType, input.bytes.byteLength);
 

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { SchoolLogoInput } from '@erp/shared/schemas';
 import { createSupabaseServerClient } from '../supabase/server.js';
-import { requireRole } from '../auth/guard.js';
+import { requirePermission } from '../auth/guard.js';
 import { uploadSchoolLogo, ALLOWED_LOGO_MIME } from '../storage/school-logo.js';
 
 /**
@@ -15,7 +15,7 @@ import { uploadSchoolLogo, ALLOWED_LOGO_MIME } from '../storage/school-logo.js';
  */
 
 export async function uploadSchoolLogoAction(formData: FormData): Promise<void> {
-  const ctx = await requireRole('school_admin');
+  const ctx = await requirePermission('settings.manage');
   if (!ctx.schoolId) throw new Error('no school context');
 
   const file = formData.get('logo');
@@ -45,7 +45,7 @@ export async function uploadSchoolLogoAction(formData: FormData): Promise<void> 
 }
 
 export async function removeSchoolLogoAction(): Promise<void> {
-  const ctx = await requireRole('school_admin');
+  const ctx = await requirePermission('settings.manage');
   if (!ctx.schoolId) throw new Error('no school context');
 
   const supabase = createSupabaseServerClient();

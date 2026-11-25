@@ -19,7 +19,7 @@ import {
 } from '@erp/shared/schemas';
 import type { z } from 'zod';
 import { createSupabaseServerClient } from '../supabase/server.js';
-import { requireRole } from '../auth/guard.js';
+import { requirePermission } from '../auth/guard.js';
 
 /**
  * Money-event RPC callers (US3/US4). Every mutation is a single Postgres
@@ -33,7 +33,7 @@ async function callMoney<TOut>(
   args: Record<string, unknown>,
   output: z.ZodType<TOut>,
 ): Promise<TOut> {
-  await requireRole('school_admin', 'accountant');
+  await requirePermission('finance.write');
   const supabase = createSupabaseServerClient();
   // `fn` is one of the money RPCs; the concrete name is chosen per-caller. Cast
   // to satisfy the rpc name-union overload (validated by the output schema).

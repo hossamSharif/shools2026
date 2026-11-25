@@ -10,16 +10,18 @@ import {
   EnrollStudentInput,
 } from '@erp/shared/schemas';
 import { createSupabaseServerClient } from '../supabase/server.js';
-import { requireRole } from '../auth/guard.js';
+import { requirePermission } from '../auth/guard.js';
 
 /**
  * Light CRUD for the school spine (US2). No money math in JS (Article VI) —
  * installment generation happens in the DB trigger on enrollment. RLS enforces
- * tenant scope; requireRole is defense-in-depth.
+ * tenant scope; requirePermission is defense-in-depth (contracts/web-routes.md).
  */
 
-async function schoolCtx() {
-  const ctx = await requireRole('school_admin', 'accountant');
+type SpineKey = 'structure.write' | 'finance.write' | 'students.write';
+
+async function schoolCtx(permission: SpineKey) {
+  const ctx = await requirePermission(permission);
   const supabase = createSupabaseServerClient();
   if (!ctx.schoolId) throw new Error('no school context');
   return { ctx, supabase, schoolId: ctx.schoolId };
@@ -29,7 +31,7 @@ export async function createAcademicYear(input: {
   label: string;
   is_current?: boolean;
 }): Promise<void> {
-  const { supabase, schoolId } = await schoolCtx();
+  const { supabase, schoolId } = await schoolCtx('structure.write');
   const v = CreateAcademicYearInput.parse(input);
 
   // Enforce single-current: clear others when marking this current.
@@ -48,7 +50,7 @@ export async function createAcademicYear(input: {
 }
 
 export async function setCurrentYear(yearId: string): Promise<void> {
-  const { supabase, schoolId } = await schoolCtx();
+  const { supabase, schoolId } = await schoolCtx('structure.write');
   await supabase
     .from('academic_year')
     .update({ is_current: false })
@@ -64,7 +66,7 @@ export async function setCurrentYear(yearId: string): Promise<void> {
 }
 
 export async function createSection(input: { grade_id: string; name: string }): Promise<void> {
-  const { supabase, schoolId } = await schoolCtx();
+  const { supabase, schoolId } = await schoolCtx('structure.write');
   const v = CreateSectionInput.parse(input);
   const { error } = await supabase
     .from('section')
@@ -79,7 +81,7 @@ export async function createAccount(input: {
   account_number?: string;
   opening_balance?: string;
 }): Promise<void> {
-  const { supabase, schoolId } = await schoolCtx();
+  const { supabase, schoolId } = await schoolCtx('finance.write');
   const v = AccountInput.parse({ ...input, opening_balance: input.opening_balance ?? '0' });
   const { error } = await supabase.from('account').insert({
     school_id: schoolId,
@@ -101,7 +103,7 @@ export async function upsertStudent(input: {
   guardian_phone?: string;
   status?: 'active' | 'withdrawn' | 'graduated';
 }): Promise<{ id: string }> {
-  const { supabase, schoolId } = await schoolCtx();
+  const { supabase, schoolId } = await schoolCtx('students.write');
   const v = StudentInput.parse(input);
   const row = {
     school_id: schoolId,
@@ -136,7 +138,7 @@ export async function setStudentStatus(
   studentId: string,
   status: 'active' | 'withdrawn' | 'graduated',
 ): Promise<void> {
-  const { supabase, schoolId } = await schoolCtx();
+  const { supabase, schoolId } = await schoolCtx('students.write');
   const { error } = await supabase
     .from('student')
     .update({ status })
@@ -160,13 +162,13 @@ export async function setStudentStatus(
  */
 export async function deleteStudent(studentId: string): Promise<void> {
   // Deletion is the one student operation an accountant must not have.
-  const ctx = await requireRole('school_admin');
+  const ctx = await requirePermission('students.delete');
   if (!ctx.schoolId) throw new Error('no school context');
   const schoolId = ctx.schoolId;
   const supabase = createSupabaseServerClient();
 
-  const [{ count: instCount }, { count: eventCount }, { count: discountCount }] =
-    await Promise.all([
+  const [{ count: instCount }, { count: eventCount }, { count: discountCount }] = await Promise.all(
+    [
       supabase
         .from('installment')
         .select('id', { count: 'exact', head: true })
@@ -179,7 +181,8 @@ export async function deleteStudent(studentId: string): Promise<void> {
         .from('discount')
         .select('id', { count: 'exact', head: true })
         .eq('student_id', studentId),
-    ]);
+    ],
+  );
 
   if ((instCount ?? 0) > 0 || (eventCount ?? 0) > 0 || (discountCount ?? 0) > 0) {
     throw new Error('الطالب لديه سجل مالي — لا يمكن الحذف. استخدم الأرشفة بدلاً من ذلك.');
@@ -206,7 +209,7 @@ export async function createFeeStructure(input: {
   items: { name: string; amount: string }[];
   schedule: { sequence: number; due_date: string; amount: string }[];
 }): Promise<void> {
-  const { supabase, schoolId } = await schoolCtx();
+  const { supabase, schoolId } = await schoolCtx('finance.write');
   const v = FeeStructureInput.parse(input);
 
   const { data: fs, error: fsErr } = await supabase
@@ -247,7 +250,7 @@ export async function enrollStudent(input: {
   section_id: string;
   academic_year_id: string;
 }): Promise<void> {
-  const { supabase, schoolId } = await schoolCtx();
+  const { supabase, schoolId } = await schoolCtx('students.write');
   const v = EnrollStudentInput.parse(input);
   const { error } = await supabase.from('enrollment').insert({
     school_id: schoolId,

@@ -1,6 +1,6 @@
 'use server';
 
-import { requireRole } from '../auth/guard.js';
+import { requirePermission } from '../auth/guard.js';
 import { studentInstallments, type OutstandingInstallment } from '../queries/balances.js';
 
 /**
@@ -10,6 +10,6 @@ import { studentInstallments, type OutstandingInstallment } from '../queries/bal
 export async function studentInstallmentsClient(
   studentId: string,
 ): Promise<OutstandingInstallment[]> {
-  await requireRole('school_admin', 'accountant', 'viewer');
+  await requirePermission('finance.read');
   return studentInstallments(studentId);
 }
