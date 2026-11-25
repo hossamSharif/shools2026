@@ -220,4 +220,14 @@ instead on the live database, as real `authenticated` sessions, inside blocks th
   direct `role` or `status` change is therefore not refused. A plain PostgREST request is not
   exposed, because `authenticated` cannot write `role_assignment`. Fixed forward by
   `0037a_scope_access_sync_flag.sql` (restores the previous value after the trigger's own
-  UPDATE). **Written; awaiting owner review before apply.**
+  UPDATE).
+- **0037a live apply:** the owner approved in chat ("Yes apply"). It was applied through
+  Supabase MCP `apply_migration` as `0037a_scope_access_sync_flag`. The failing scenario was
+  re-run inside an aborting block, with role assignments written first and then direct changes
+  by the super-admin:
+  - the flag is empty again after the trigger's update;
+  - the `role` and `status` changes now give `DIRECT_ROLE_CHANGE_FORBIDDEN`;
+  - the primary-role sync still works on add (teacher → student_affairs) and on remove
+    (back to teacher).
+
+  **Fixed.**
