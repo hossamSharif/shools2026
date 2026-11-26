@@ -563,3 +563,27 @@ config only set `launchOptions.executablePath`). No assertion was edited.
 - **Cleanup:** the temporary students "طالب مؤقت …" (one left by the failed spec, three by the
   reproduction) were deleted; none had money events.
 
+
+## US5 migration 0046: local verification (T071), 2026-11-26
+
+Applied to a copy of the local US4 database (`us5`) with `ON_ERROR_STOP` in one transaction;
+every scenario ran inside a block that always aborts. `audit_access_policies()` returns 0
+violations, and anon gets `42501` on both new functions.
+
+- **`optional_permission_matrix()`:** 6 rows, with only `viewer/finance.export` on by default.
+  The school admin and the principal (`users.read`) can read it; student affairs gets
+  `FORBIDDEN_PERMISSION`.
+- **Catalogue only:** `principal/finance.read`, `teacher/finance.read`,
+  `student_affairs/finance.write`, `principal/users.manage` and `guardian/finance.read` all
+  give `NOT_GRANTABLE`; a NULL value gives `INVALID_INPUT`.
+- **Next request:**
+  - with the fee indicator on, student affairs sees `X=partial, Y=unpaid`; switched off, the
+    same caller's next `student_directory` call returns NULL for all;
+  - the viewer's `has_perm('finance.export')` goes from true to false on the next statement.
+- **Tenant isolation:** school B's matrix still shows `viewer/finance.export` on after school A
+  switched it off.
+- **Callers:** student affairs and the principal (no `users.manage`) get `FORBIDDEN_PERMISSION`.
+- **Grace:** switching on gives `WRITES_GATED`; switching off is allowed.
+- **Audit:** exactly one `optional_permission_changed` row per real change, with before/after
+  `{role, key, enabled}`, the admin as actor and no target user. Setting a switch to the value
+  it already has stores and logs nothing. `school_role_permission.changed_by` is the admin.
