@@ -6,6 +6,7 @@ import {
   InvitationIdInput,
   SetUserRolesInput,
   UserIdInput,
+  SetOptionalPermissionInput,
 } from '@erp/shared/schemas';
 import { createSupabaseServerClient } from '../supabase/server.js';
 import { requirePermission } from '../auth/guard.js';
@@ -103,3 +104,19 @@ export async function reactivateUser(input: unknown): Promise<void> {
   revalidatePath('/users');
 }
 
+/**
+ * Switch one catalogue permission for a role (spec 002, US5). Postgres checks
+ * users.manage, the catalogue (NOT_GRANTABLE), write gating for switch-on, and
+ * writes the audit row.
+ */
+export async function setOptionalPermission(input: unknown): Promise<void> {
+  const parsed = SetOptionalPermissionInput.parse(input);
+  const supabase = await ctx();
+  const { error } = await supabase.rpc('set_optional_permission', {
+    p_role: parsed.role,
+    p_key: parsed.key,
+    p_enabled: parsed.enabled,
+  });
+  if (error) await throwAccessError(error);
+  revalidatePath('/users/permissions');
+}

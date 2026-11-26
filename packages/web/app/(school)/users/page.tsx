@@ -6,6 +6,7 @@ import { PageHeader } from '../../../components/layout/index.js';
 import { InviteDialog } from '../../../components/users/invite-dialog.js';
 import { InvitationsList } from '../../../components/users/invitations-list.js';
 import { UsersTable } from '../../../components/users/users-table.js';
+import { UsersTabs } from '../../../components/users/users-tabs.js';
 
 /**
  * Staff users of the school (spec 002, US3, T058). Read with users.read
@@ -32,6 +33,7 @@ export default async function UsersPage() {
         subtitle={t('subtitle')}
         actions={canManage && allowGrants ? <InviteDialog stages={stages} /> : null}
       />
+      <UsersTabs active="users" />
       {canManage && !allowGrants ? (
         <p role="status" className="rounded-md bg-amber-50 p-3 text-sm text-amber-900">
           {t('readOnlyBanner')}

@@ -1685,6 +1685,18 @@ export type Database = {
         Args: never
         Returns: Database["public"]["Enums"]["user_role"][]
       }
+      optional_permission_matrix: {
+        Args: never
+        Returns: {
+          changed_at: string
+          changed_by: string
+          default_enabled: boolean
+          enabled: boolean
+          label_ar: string
+          permission_key: string
+          role: Database["public"]["Enums"]["user_role"]
+        }[]
+      }
       perm_scope: { Args: { p_key: string }; Returns: string[] }
       portal_student_ids: { Args: never; Returns: string[] }
       reactivate_user: { Args: { p_user_id: string }; Returns: undefined }
@@ -1782,6 +1794,14 @@ export type Database = {
       school_users_with_perm: {
         Args: { p_key: string; p_school_id: string }
         Returns: string[]
+      }
+      set_optional_permission: {
+        Args: {
+          p_enabled: boolean
+          p_key: string
+          p_role: Database["public"]["Enums"]["user_role"]
+        }
+        Returns: undefined
       }
       set_user_roles: {
         Args: {
