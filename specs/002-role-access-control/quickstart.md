@@ -41,8 +41,8 @@ Then:
 | Item | Where | Value |
 |---|---|---|
 | `APP_URL` | worker env | public web origin (new) |
-| Invite email template | Supabase Auth → Email templates → Invite | Arabic RTL body; link `{{ .RedirectTo }}?token={{ .Data.invite_token }}` |
-| Redirect allow-list | Supabase Auth → URL configuration | add `${APP_URL}/auth/accept-invite` |
+| Invite email template | Supabase Auth → Email templates → Invite | Arabic RTL body; link `{{ .ConfirmationURL }}` (the worker's `redirectTo` already carries `?token=`; the raw token is never put in user metadata, see `packages/api/README.md`) |
+| Redirect allow-list | Supabase Auth → URL configuration | add `${APP_URL}/auth/accept-invite**` |
 | Existing | unchanged | `WORKER_URL`, `INTERNAL_DISPATCH_TOKEN`, `SUPABASE_*` |
 
 Never hard-code any of these (Security & Secrets).
