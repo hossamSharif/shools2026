@@ -44,5 +44,5 @@ export function accessAuditToCsv(rows: AccessAuditRow[], l: AuditLabels, system:
         .join(','),
     );
   }
-  return `﻿${lines.join('\n')}`;
+  return `\ufeff${lines.join('\n')}`;
 }
