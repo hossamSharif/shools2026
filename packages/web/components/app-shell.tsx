@@ -47,6 +47,7 @@ const NAV: NavItem[] = [
   { href: '/sms', key: 'sms', gate: { perm: 'finance.read' } },
   { href: '/notifications', key: 'notifications', gate: { staff: true } },
   { href: '/settings/years', key: 'settings', gate: { perm: 'settings.read' } },
+  { href: '/users', key: 'users', gate: { perm: 'users.read' } },
 ];
 
 function visible(gate: NavGate, access: ShellAccess): boolean {

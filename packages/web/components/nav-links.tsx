@@ -10,6 +10,7 @@ import {
   Settings,
   Building2,
   Home,
+  UserCog,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -29,6 +30,7 @@ const NAV_ICONS: Record<string, LucideIcon> = {
   sms: MessageSquare,
   notifications: Bell,
   settings: Settings,
+  users: UserCog,
 };
 
 export interface NavLinkItem {
