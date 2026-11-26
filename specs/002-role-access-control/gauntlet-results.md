@@ -587,3 +587,22 @@ violations, and anon gets `42501` on both new functions.
 - **Audit:** exactly one `optional_permission_changed` row per real change, with before/after
   `{role, key, enabled}`, the admin as actor and no target user. Setting a switch to the value
   it already has stores and logs nothing. `school_role_permission.changed_by` is the admin.
+
+## US5 migration 0046: live apply and tests (T071, T070, T073), 2026-11-26
+
+- **Owner approval:** the owner approved in chat. A pre-check confirmed that neither function
+  existed and that the live allow-list equals the 0045 list this migration extends (51 names,
+  md5 `3e2aada0…`). Applied through Supabase MCP `apply_migration` as
+  `0046_optional_permission_functions`.
+- **Transcription check:** the md5 of `optional_permission_matrix`, `set_optional_permission`
+  and `reviewed_definer_functions` equals the local copy. `audit_access_policies()` returns 0
+  violations; anon cannot execute either function.
+- **Types:** regenerated; identical to the entries added by hand in T072.
+- **`optional-permissions.test.ts` on live:** 8 passed, 1 skipped (the teacher-roster case runs
+  on a branch database only).
+- **`us5-optional-permission.spec.ts` on live (Gauntlet School A):** passed. Switching
+  "معلم: عرض بيانات ولي الأمر" on wrote exactly one `optional_permission_changed` row; the
+  teacher section shows its 2 catalogue switches and no finance switch; the viewer's
+  `/reports/receivables/export` returned 200, then 403 on the next request after "مطّلع: تصدير
+  التقارير المالية" was switched off. Afterwards both switches are back at their defaults, and
+  no orphaned test users remain.
