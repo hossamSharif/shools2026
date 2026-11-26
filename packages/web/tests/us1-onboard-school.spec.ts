@@ -34,6 +34,7 @@ test.describe('US1 — onboard a school tenant', () => {
     await row.getByRole('link', { name: 'إضافة رصيد' }).click();
     await page.getByLabel('عدد الرسائل المضافة').fill('1000');
     await page.getByRole('button', { name: 'إضافة رصيد' }).click();
-    await expect(page.getByText(/الرصيد الحالي/)).toContainText('١٬٠٠٠');
+    // Numbers render with Western digits (lib/format/number.ts, since 32bd981).
+    await expect(page.getByText(/الرصيد الحالي/)).toContainText('1,000');
   });
 });
