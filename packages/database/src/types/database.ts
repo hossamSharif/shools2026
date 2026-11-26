@@ -48,6 +48,64 @@ export type Database = {
           },
         ]
       }
+      access_audit_entry: {
+        Row: {
+          action: Database["public"]["Enums"]["access_audit_action"]
+          actor_id: string | null
+          after: Json
+          before: Json
+          id: number
+          occurred_at: string
+          school_id: string
+          target_email: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["access_audit_action"]
+          actor_id?: string | null
+          after?: Json
+          before?: Json
+          id?: never
+          occurred_at?: string
+          school_id: string
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["access_audit_action"]
+          actor_id?: string | null
+          after?: Json
+          before?: Json
+          id?: never
+          occurred_at?: string
+          school_id?: string
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_audit_entry_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_audit_entry_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "school"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "access_audit_entry_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account: {
         Row: {
           account_number: string | null
@@ -482,6 +540,79 @@ export type Database = {
           },
           {
             foreignKeyName: "installment_schedule_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "school"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitation: {
+        Row: {
+          accepted_at: string | null
+          auth_user_id: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          revoked_at: string | null
+          revoked_by: string | null
+          roles: Database["public"]["Enums"]["user_role"][]
+          school_id: string
+          stage_scope: Json
+          state: Database["public"]["Enums"]["invitation_state"]
+          token_hash: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          auth_user_id?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          roles: Database["public"]["Enums"]["user_role"][]
+          school_id: string
+          stage_scope?: Json
+          state?: Database["public"]["Enums"]["invitation_state"]
+          token_hash?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          auth_user_id?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          revoked_at?: string | null
+          revoked_by?: string | null
+          roles?: Database["public"]["Enums"]["user_role"][]
+          school_id?: string
+          stage_scope?: Json
+          state?: Database["public"]["Enums"]["invitation_state"]
+          token_hash?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitation_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitation_school_id_fkey"
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "school"
@@ -1376,6 +1507,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: {
+        Args: {
+          p_auth_user_id: string
+          p_display_name: string
+          p_token_hash: string
+        }
+        Returns: Json
+      }
       account_balance: { Args: { p_account_id: string }; Returns: number }
       account_balance_unchecked: {
         Args: { p_account_id: string }
@@ -1441,6 +1580,14 @@ export type Database = {
         }
         Returns: Json
       }
+      create_invitation: {
+        Args: {
+          p_email: string
+          p_roles: Database["public"]["Enums"]["user_role"][]
+          p_stage_scope?: Json
+        }
+        Returns: string
+      }
       current_is_super_admin: { Args: never; Returns: boolean }
       current_role: {
         Args: never
@@ -1450,6 +1597,7 @@ export type Database = {
       current_year_id: { Args: never; Returns: string }
       dashboard_kpis: { Args: { p_school_id: string }; Returns: Json }
       dashboard_kpis_unchecked: { Args: { p_school_id: string }; Returns: Json }
+      deactivate_user: { Args: { p_user_id: string }; Returns: undefined }
       digits_only: { Args: { p_text: string }; Returns: string }
       emit_expiry_notifications: {
         Args: { p_within_days?: number }
@@ -1464,6 +1612,7 @@ export type Database = {
         }
         Returns: string
       }
+      expire_invitations: { Args: never; Returns: number }
       generate_installments: {
         Args: { p_enrollment_id: string }
         Returns: number
@@ -1485,6 +1634,40 @@ export type Database = {
         Returns: boolean
       }
       is_service_caller: { Args: never; Returns: boolean }
+      issue_invitation_token: {
+        Args: { p_invitation_id: string }
+        Returns: string
+      }
+      list_invitations: {
+        Args: never
+        Returns: {
+          accepted_at: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          invited_by_name: string
+          revoked_at: string
+          roles: Database["public"]["Enums"]["user_role"][]
+          stage_scope: Json
+          state: Database["public"]["Enums"]["invitation_state"]
+        }[]
+      }
+      list_school_users: {
+        Args: never
+        Returns: {
+          created_at: string
+          deactivated_at: string
+          display_name: string
+          email: string
+          is_portal: boolean
+          roles: Database["public"]["Enums"]["user_role"][]
+          stage_scope: Json
+          status: Database["public"]["Enums"]["user_status"]
+          user_id: string
+        }[]
+      }
       mark_notification_read: {
         Args: { p_notification_id?: string }
         Returns: undefined
@@ -1504,6 +1687,7 @@ export type Database = {
       }
       perm_scope: { Args: { p_key: string }; Returns: string[] }
       portal_student_ids: { Args: never; Returns: string[] }
+      reactivate_user: { Args: { p_user_id: string }; Returns: undefined }
       receivables_aging: {
         Args: {
           p_grade_id?: string
@@ -1586,9 +1770,21 @@ export type Database = {
         Returns: Json
       }
       reviewed_definer_functions: { Args: never; Returns: string[] }
+      revoke_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: undefined
+      }
       school_users_with_perm: {
         Args: { p_key: string; p_school_id: string }
         Returns: string[]
+      }
+      set_user_roles: {
+        Args: {
+          p_roles: Database["public"]["Enums"]["user_role"][]
+          p_stage_scope?: Json
+          p_user_id: string
+        }
+        Returns: undefined
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
@@ -1772,6 +1968,10 @@ export type Database = {
         }[]
       }
       subscription_state: { Args: { p_school_id: string }; Returns: string }
+      superadmin_set_school_admin: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       teacher_section_ids: { Args: never; Returns: string[] }
       topup_sms_credit: {
         Args: {
@@ -1781,8 +1981,72 @@ export type Database = {
         }
         Returns: Json
       }
+      um_lock_school: { Args: { p_school_id: string }; Returns: undefined }
+      um_other_active_admins: {
+        Args: { p_except: string; p_school_id: string }
+        Returns: number
+      }
+      um_role_rank: {
+        Args: { p_role: Database["public"]["Enums"]["user_role"] }
+        Returns: number
+      }
+      um_set_status: {
+        Args: {
+          p_by: string
+          p_status: Database["public"]["Enums"]["user_status"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      um_stage_ids: {
+        Args: { p_role: string; p_stage_scope: Json }
+        Returns: string[]
+      }
+      um_target: {
+        Args: { p_user_id: string }
+        Returns: {
+          created_at: string
+          deactivated_at: string | null
+          deactivated_by: string | null
+          display_name: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          school_id: string | null
+          status: Database["public"]["Enums"]["user_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      um_user_roles: {
+        Args: { p_user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"][]
+      }
+      um_user_stage_scope: { Args: { p_user_id: string }; Returns: Json }
+      um_validate: {
+        Args: {
+          p_roles: Database["public"]["Enums"]["user_role"][]
+          p_stage_scope: Json
+        }
+        Returns: undefined
+      }
       update_own_display_name: {
         Args: { p_display_name: string }
+        Returns: undefined
+      }
+      write_access_audit: {
+        Args: {
+          p_action: Database["public"]["Enums"]["access_audit_action"]
+          p_actor: string
+          p_after: Json
+          p_before: Json
+          p_school_id: string
+          p_target: string
+          p_target_email: string
+        }
         Returns: undefined
       }
     }

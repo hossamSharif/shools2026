@@ -403,4 +403,26 @@ reviewed list and every `um_*` helper internal. A scenario run, as real `authent
 - **Audit rows:** exactly one per logical change (`role_added` 4, `role_removed` 4,
   `stage_scope_changed` 1, `user_deactivated` 2, `user_reactivated` 2, plus the invitation rows).
 
-**Next: T052 owner review gate.** Not yet applied to the live database.
+## US3 migrations 0043–0044: live apply (T052), 2026-11-26
+
+- **Owner approval:** the owner approved in chat ("Approved, apply them"). A pre-check confirmed
+  none of the new objects existed and that `pgcrypto` was already present. Applied through Supabase
+  MCP `apply_migration` as `0043_invitation_access_audit` (it also installs `citext` into
+  `extensions`) and `0044_user_management_functions`.
+- **Transcription check:** the md5 over the bodies of all 21 functions created by 0044 on the live
+  database equals the local reference (`108f81c2…`, 21/21).
+- **Structure:**
+  - `audit_access_policies()` returns 0 violations;
+  - RLS is enabled and forced on `invitation` and `access_audit_entry`;
+  - `authenticated` cannot read `invitation.token_hash`, anon cannot select from `invitation`, and
+    `authenticated` cannot execute `accept_invitation`.
+- **Behaviour in the real school, inside a block that always aborts (nothing persisted):**
+  - **as the real school admin:** an invitation for teacher + student_affairs gives a 43-character
+    token; a duplicate gives `EMAIL_IN_USE`; a self change gives `SELF_CHANGE_FORBIDDEN`;
+    `list_school_users` lists the school's 3 users;
+  - **as the service role:** `accept_invitation` creates the user with both roles, a second accept
+    gives `INVITATION_INVALID`, and an `access_audit_entry` UPDATE gives `AUDIT_IMMUTABLE`;
+  - **the new user:** reads 12 students, then 0 on the next statement after `deactivate_user`;
+  - **the accountant:** `create_invitation` gives `FORBIDDEN_PERMISSION`;
+  - **audit rows:** `invitation_sent` 1, `invitation_accepted` 1, `user_deactivated` 1.
+- **Types:** regenerated. `pnpm -w typecheck` passes (8/8).
