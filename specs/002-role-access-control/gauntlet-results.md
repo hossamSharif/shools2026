@@ -681,3 +681,71 @@ No migration: the portal roles were defined and scoped in 0034–0041. Runs on t
   `matrix.test.ts` probes both against every data set and derived function; it passed on live
   (1,115 cases) after 0047.
 - No orphaned test users remain.
+
+## Final advisors check (T087), 2026-11-26
+
+- **Security:**
+  - `authenticated_security_definer_function_executable` lists 54 functions. Accepted: the set is
+    exactly the reviewed allow-list. On live, the public SECURITY DEFINER functions executable
+    by `authenticated` and `reviewed_definer_functions()` are both 54, with no name in one and
+    not the other. Each function checks its own permission, which `definer-exposure.test.ts`
+    and the matrix prove.
+  - `extension_in_public` (`pg_trgm`): Phase 1, unchanged. Moving it would rebuild the student
+    search index, which is outside this feature.
+  - `auth_leaked_password_protection`: an Auth dashboard setting for the owner, not a schema
+    change.
+- **Performance:**
+  - after 0047, every `unindexed_foreign_keys` and `multiple_permissive_policies` finding is on a
+    Phase 1 table (11 and 5);
+  - the `unused_index` entries for the 0047 indexes only reflect that they are new.
+- **Result:** no new finding from feature 002 remains, so no further migration is needed.
+
+## Final verification (T088), 2026-11-26
+
+Run against the live project with the owner-supplied keys.
+
+- **Typecheck:** `pnpm -w typecheck`: 8/8 passed.
+- **Lint:** `pnpm -w lint` fails before linting anything. The root `.eslintrc.cjs` has extended
+  `prettier` with `@typescript-eslint` since the Phase 1 scaffold (f6eeef6), but
+  `eslint-config-prettier`, `@typescript-eslint/parser` and `@typescript-eslint/eslint-plugin`
+  were never installed.
+  - To check this feature anyway, the three packages were installed temporarily (then reverted:
+    `package.json`, the lockfile and `node_modules` restored with
+    `pnpm install --frozen-lockfile`).
+  - **Non-web files changed by feature 002 (40):** 0 errors; the 1 warning is in unchanged
+    Phase 1 code.
+  - **Web files changed by feature 002 (76, `next lint`):** one real error, fixed (a raw BOM
+    character in the audit CSV, now `﻿`). The remaining errors are
+    `@next/next/no-img-element` "rule not found" on two eslint-disable comments, because the
+    root config lacks the Next plugin. `app-shell.tsx` has used the same comment since Phase 1.
+  - Repairing the lint toolchain is left as a separate task.
+- **Shared:** `pnpm --filter @erp/shared test`: 4 files, 24 passed.
+- **API:** `pnpm --filter @erp/api test`: 4 files, 19 passed.
+- **Database:** `pnpm --filter @erp/database test` with `REQUIRE_INTEGRATION_ENV=1`: 26 files,
+  1,355 passed, 3 skipped (branch-database cases), 0 failed.
+- **Playwright:** `pnpm --filter @erp/web test:e2e` (preinstalled Chromium,
+  `E2E_ACCESS_FIXTURE=1`): 49 passed, 9 skipped, 6 failed.
+  - **US4 payment reversal:** failed with "Cannot read properties of null (reading
+    'useContext')" on the receipt page. That was a duplicate React copy left in `node_modules`
+    by the temporary lint install. After `pnpm install --frozen-lockfile`, `us4-money-events`
+    passed 6/6.
+  - **The other 5 are the known failures from before this feature**, all recorded earlier:
+    - `us1-onboard-school`: a stale assertion expecting Arabic-Indic digits;
+    - `us7-reminders` (2): need a running worker (`WORKER_URL`);
+    - `us8-lifecycle` grace: the seeded subscription has aged into locked;
+    - `students-directory` create → edit: the first row-menu click after the create dialog
+      closes does nothing. It reproduced identically with the pre-feature code.
+  - Every feature 002 spec passed: `us3-invite-teacher` skipped without a worker; `us4-new-roles`
+    3/3, `us5-optional-permission`, `us6-access-audit`, `login-portal-refused` 2/2 and
+    `rtl-access-screens` 7/7 passed.
+- **No assertion edits (FR-036):** `git diff --stat 4c730ca` (the last commit before feature 002)
+  over `packages/web/tests/us*.spec.ts`, `responsive-*.spec.ts`, `rtl-arabic-audit.spec.ts` and
+  `packages/database/src/functions/*.test.ts`:
+  - **Phase 1 web specs:** unchanged. The only `us*` entries are the four new feature 002 specs.
+  - **Seven `src/functions/*.test.ts` files:** one change each, the same, outside any assertion.
+    `afterAll` now runs `cleanupSchool` before `accountant.cleanup()`. The user delete was
+    silently blocked by the accountant's money events and left orphaned users (see "Integration
+    suites on the live project" above).
+- **Cleanup:** no orphaned test users; Gauntlet School A's optional switches are at their
+  defaults; one temporary student left by the failing `students-directory` case was deleted
+  (no money events).
