@@ -749,3 +749,13 @@ Run against the live project with the owner-supplied keys.
 - **Cleanup:** no orphaned test users; Gauntlet School A's optional switches are at their
   defaults; one temporary student left by the failing `students-directory` case was deleted
   (no money events).
+
+## T046 decision, 2026-11-26
+
+The owner accepted the recommendation ("Do what you recommend"):
+- the large reports are within the ≤10 % p95 budget (directory −14 %, aging +3 %, dashboard
+  noise);
+- the fixed 0.3–1.2 ms per-statement permission lookup on the sub-millisecond statement and
+  payments-list queries meets SC-008 in practice, since it is well inside the run-to-run noise
+  of a full request;
+- a cached per-request grant set is not needed now. **T046 closed.**
