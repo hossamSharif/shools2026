@@ -759,3 +759,25 @@ The owner accepted the recommendation ("Do what you recommend"):
   payments-list queries meets SC-008 in practice, since it is well inside the run-to-run noise
   of a full request;
 - a cached per-request grant set is not needed now. **T046 closed.**
+
+## Follow-up fixes after the phase (owner: "Do what you recommend"), 2026-11-26
+
+- **Row menu first click (pre-existing, `components/layout/row-actions.tsx`):** right after the
+  create dialog closed, the browser fired a document `scroll` event 9 ms after the first click
+  on a row menu. The close-on-scroll handler shut the menu before it showed. The menu now
+  closes on scroll or resize only when its trigger actually moved. `students-directory` and
+  `responsive-tables`: 12 passed (the create → edit → delete case included).
+- **US1 stale assertion:** expects "1,000" (Western digits, as `lib/format/number.ts` renders
+  since 32bd981) instead of "١٬٠٠٠". `us1-onboard-school` passed. This is a separate fix after
+  the feature 002 gate, not part of it (FR-036).
+- **Lint repaired:**
+  - root dev dependencies `eslint-config-prettier@9.1.0`, `@typescript-eslint/parser@7.18.0` and
+    `@typescript-eslint/eslint-plugin@7.18.0` (all three referenced by `.eslintrc.cjs` since the
+    scaffold);
+  - `packages/web/.eslintrc.cjs` extends the root rules plus `next/core-web-vitals`, so the
+    `@next/next` and `react-hooks` rules that the app's comments use exist;
+  - the raw BOM in `receivables-export.ts` became `﻿` (same bytes; `us5-receivables`
+    passed).
+
+  **`pnpm -w lint`: 8/8 passed** (one warning, an unused variable in a Phase 1 test).
+  `pnpm -w typecheck` 8/8; `next build` passes its lint step.

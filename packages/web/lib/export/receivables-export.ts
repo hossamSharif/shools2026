@@ -52,5 +52,5 @@ export function receivablesToCsv(rows: ReceivableRow[]): string {
         .join(','),
     );
   }
-  return `﻿${lines.join('\n')}`;
+  return `\ufeff${lines.join('\n')}`;
 }
