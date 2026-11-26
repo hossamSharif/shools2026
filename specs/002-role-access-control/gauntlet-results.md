@@ -606,3 +606,27 @@ violations, and anon gets `42501` on both new functions.
   `/reports/receivables/export` returned 200, then 403 on the next request after "مطّلع: تصدير
   التقارير المالية" was switched off. Afterwards both switches are back at their defaults, and
   no orphaned test users remain.
+
+## US6 migration 0047: local verification (T076, T033 follow-up), 2026-11-26
+
+Applied to a copy of the local US5 database (`us6`) with `ON_ERROR_STOP` in one transaction;
+the scenarios ran inside a block that always aborts, over one seeded audit row per action in
+school A (a day apart) and one in school B. `audit_access_policies()` returns 0 violations.
+
+- **`list_access_audit()` as the school admin:**
+  - 10 rows (school A only), one per action, newest first, with actor and target names joined;
+  - the user filter matches actor or target (teacher as target: 6, adminA as actor: 10); the
+    action filter gives 1 row;
+  - the range [3 Nov 00:00, 5 Nov 00:00) Africa/Khartoum returns exactly the rows whose
+    Khartoum wall time falls in it (UTC+2 confirmed: 21:30Z shows as 23:30);
+  - keyset paging: page 1 (limit 4) and page 2 (`p_before_id` = last id of page 1) are the next
+    8 rows in order; `p_limit` is capped at 500 and 0 becomes 1;
+  - direct UPDATE/DELETE as the admin give `42501`; as the service role, `AUDIT_IMMUTABLE`.
+- **Who can read:** the principal reads 10; the school B admin reads only B's row. The teacher,
+  accountant, viewer, student affairs, super-admin and guardian get `FORBIDDEN_PERMISSION`
+  from the function and 0 rows from the table; anon gets `42501`.
+- **Merged SELECT policies (advisor follow-up):** `role_assignment`, `role_assignment_stage` and
+  `portal_link` now have one SELECT policy each. For all 15 fixture users × 3 tables, the md5 of
+  the visible rows is identical before and after 0047 (45 combinations, 27 non-empty).
+- **Indexes:** the 11 covering indexes for the feature 002 foreign keys listed by the advisor,
+  plus `(school_id, id desc)` for keyset paging, are created.
