@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import { dispatchRunRouter } from './routes/dispatch-run.js';
 import { dispatchManualRouter } from './routes/dispatch-manual.js';
 import { deliveryWebhookRouter } from './routes/delivery-webhook.js';
+import { invitationsRouter } from './routes/invitations.js';
 
 /**
  * Builds the Express worker app: cron-driven reminder dispatch + provider
@@ -34,6 +35,8 @@ export function createApp(): Express {
   app.use(dispatchRunRouter);
   app.use(dispatchManualRouter);
   app.use(deliveryWebhookRouter);
+  // Spec 002 (US3): staff invitation send/accept.
+  app.use(invitationsRouter);
 
   return app;
 }
