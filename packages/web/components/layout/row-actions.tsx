@@ -91,7 +91,15 @@ export function RowActions({ actions, label = 'إجراءات' }: { actions: Row
     // Fixed coordinates don't follow a scrolling ancestor, so close rather than
     // let the menu drift away from its row. `true` catches scrolls on the
     // table's own overflow container, which don't bubble.
+    //
+    // Only when the trigger really moved: the browser can fire a scroll event
+    // without any movement right after a click (e.g. the first focus after a
+    // Radix dialog closes), which used to close the menu before it showed.
+    const start = triggerRef.current?.getBoundingClientRect();
     function onScrollOrResize() {
+      const now = triggerRef.current?.getBoundingClientRect();
+      if (start && now && Math.abs(now.top - start.top) < 1 && Math.abs(now.left - start.left) < 1)
+        return;
       close();
     }
     document.addEventListener('mousedown', onPointerDown);
