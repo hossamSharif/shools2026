@@ -426,3 +426,40 @@ reviewed list and every `um_*` helper internal. A scenario run, as real `authent
   - **the accountant:** `create_invitation` gives `FORBIDDEN_PERMISSION`;
   - **audit rows:** `invitation_sent` 1, `invitation_accepted` 1, `user_deactivated` 1.
 - **Types:** regenerated. `pnpm -w typecheck` passes (8/8).
+
+## US4 migration 0045: local verification (T066), 2026-11-26
+
+Applied to a copy of the local US3 database (`us4`, Postgres 16, storage schema stubbed) with
+`ON_ERROR_STOP` in one transaction. Every scenario ran inside a block that always aborts.
+
+- **Policy audit:** `audit_access_policies()` returns 0 violations. The three new definer
+  functions are on the reviewed allow-list; `safe_uuid` is not a definer. anon has no execute
+  on `teacher_roster`, `register_student` or `teacher_can_see_student`, and gets `42501` on all
+  of them and on `storage.objects`.
+- **`register_student`:**
+  - student affairs (school-wide) registers into Primary. The trigger generates the 2
+    installments of the grade's fee structure; student affairs sees 0 of them, and
+    `student_directory` gives `total_owed = NULL` for the new row;
+  - an empty name gives `INVALID_INPUT`; an unknown grade, or a section of another grade, gives
+    `NOT_FOUND`;
+  - `saMiddle` gets `FORBIDDEN_PERMISSION` for Primary, succeeds for Middle, and a bare
+    `student` insert is still refused (`42501`, 0038);
+  - teacher + student affairs, the accountant (Phase 1 `students.write` default) and the school
+    admin succeed;
+  - the teacher, the principal and the guardian get `FORBIDDEN_PERMISSION`; the school B admin
+    gets `NOT_FOUND` for school A's grade.
+- **`teacher_roster`:**
+  - the teacher gets 0 rows while `teacher_section_ids()` is the empty stub;
+  - student affairs, the accountant and the guardian get `FORBIDDEN_PERMISSION`;
+  - with a stubbed allocation of the Primary section, the roster lists only Primary students,
+    with NULL guardian contact; `p_section_id` of the Middle section gives 0 rows;
+  - with `students.guardian_contact` enabled for teachers, the contact is returned
+    (`X|gX|+249…`).
+- **`student-photos` bucket (objects for X, Y and a non-uuid path):**
+  - **reads:** student affairs sees X and Y, `saMiddle` only Y, and the guardian of X only X; the
+    principal and the admin see all school A photos; the teacher (no allocation) and the school B
+    admin see 0; the non-uuid path is visible to nobody;
+  - with the stubbed allocation, the teacher sees only X's photo;
+  - **writes:** student affairs can upload for X, but not to a non-uuid path or a school B
+    prefix; `saMiddle` cannot upload for X, and the teacher cannot upload at all; the admin can
+    delete X's photo.
