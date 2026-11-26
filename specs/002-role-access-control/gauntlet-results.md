@@ -363,3 +363,44 @@ verification:
   removed. `pnpm -w typecheck` passes (8/8), and the worker tests pass (10/10).
 - **Deploy order** for the manual-SMS change: 0042 (done), then the worker, then the web app. A
   worker without the web change would reject the requests (no `x-user-jwt`).
+
+## US3 migrations 0043–0044: local verification (before owner review, T050–T051)
+
+Local copy of the post-0042 schema with the `buildAccessFixture` population, plus `citext` and
+`pgcrypto` installed into `extensions` as on Supabase. Both migrations apply cleanly, and
+`audit_access_policies()` reports 0 violations, with the 9 new user-management RPCs on the
+reviewed list and every `um_*` helper internal. A scenario run, as real `authenticated` sessions
+(service role where the contract says so), gave:
+
+- **Invitations:**
+  - create works (pending, 7-day default expiry);
+  - a duplicate pending invitation, or the email of an existing user, gives `EMAIL_IN_USE`;
+  - a portal role gives `PORTAL_STAFF_MIX`, and stages on a teacher give `STAGE_SCOPE_NOT_ALLOWED`;
+  - the token is 43 characters, and `authenticated` reading `token_hash` gets 42501;
+  - `accept_invitation` is 42501 for `authenticated`. As the service role it creates the
+    principal with its Primary stage row; a second use, or a revoked token, gives
+    `INVITATION_INVALID`;
+  - `expire_invitations()` expires the overdue one.
+- **Roles:**
+  - adding and removing a role works;
+  - a stage change for Middle-scoped student affairs works;
+  - self change → `SELF_CHANGE_FORBIDDEN`; empty set → `ROLES_REQUIRED`; portal mix →
+    `PORTAL_STAFF_MIX`; stages on a teacher → `STAGE_SCOPE_NOT_ALLOWED`; another school's user
+    or a portal-only user → `NOT_FOUND`.
+- **Last admin:** after A2 demotes A, A's attempt to demote A2 is refused. The permission is
+  re-checked after the school lock, so the demoted caller gets `FORBIDDEN_PERMISSION`.
+- **Revocation:** the same `teacherSa` session reads 3 students, then 0 on its next statement
+  after `deactivate_user`.
+- **Permissions:** accountant and principal get `FORBIDDEN_PERMISSION` on every management
+  call; the principal can list users.
+- **Grace:** invite, add role, reactivate and a mixed change give `WRITES_GATED`; deactivate and
+  role removal succeed.
+- **Super-admin:** `superadmin_set_school_admin` reactivates the principal as school_admin, and
+  the super-admin still reads 0 `access_audit_entry` rows.
+- **Immutability:** an UPDATE or DELETE on `access_audit_entry` by the service role gives
+  `AUDIT_IMMUTABLE`. The two FK cascades still work: deleting a user nulls its reference, and
+  deleting a school removes its audit rows.
+- **Audit rows:** exactly one per logical change (`role_added` 4, `role_removed` 4,
+  `stage_scope_changed` 1, `user_deactivated` 2, `user_reactivated` 2, plus the invitation rows).
+
+**Next: T052 owner review gate.** Not yet applied to the live database.
