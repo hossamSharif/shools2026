@@ -630,3 +630,26 @@ school A (a day apart) and one in school B. `audit_access_policies()` returns 0 
   the visible rows is identical before and after 0047 (45 combinations, 27 non-empty).
 - **Indexes:** the 11 covering indexes for the feature 002 foreign keys listed by the advisor,
   plus `(school_id, id desc)` for keyset paging, are created.
+
+## US6 migration 0047: live apply and tests (T076, T074, T075, T033), 2026-11-26
+
+- **Owner approval:** the owner approved in chat. A pre-check confirmed that the function and
+  the 12 indexes did not exist, and that the live allow-list and the six SELECT policies of
+  `role_assignment`, `role_assignment_stage` and `portal_link` are identical to the local
+  pre-0047 copy. Applied through Supabase MCP `apply_migration` as `0047_access_audit_read`.
+- **Transcription check:** the md5 of `list_access_audit`, `reviewed_definer_functions` and the
+  three merged policies equals the local copy; all 12 indexes exist; `audit_access_policies()`
+  returns 0 violations; anon cannot execute `list_access_audit`.
+- **Visibility on live (read-only, rolled back):** for every live user × the 3 re-policied
+  tables (24 combinations, 7 non-empty), the md5 of the visible rows is identical before and
+  after the apply (`9f60abbe…`).
+- **Types:** regenerated; identical to the entries added by hand in T077.
+- **`get_advisors` (performance) after 0047:** unindexed foreign keys 22 → 11 and multiple
+  permissive policies 8 → 5; every remaining finding is a Phase 1 table. The new indexes are
+  listed as unused only because they were just created. **T033 is closed.**
+- **Database, on live:** `audit.test.ts` 5 passed; the whole access suite (`src/access`)
+  13 files, 1,310 passed, 3 skipped (branch-database cases), 0 failed, including the
+  1,115-case read/write matrix.
+- **Playwright, on live:** `us6-access-audit`, `us5-optional-permission` and the three
+  `us4-new-roles` tests passed (5); `us3-invite-teacher` skipped (no worker in this run).
+- No orphaned test users remain.
