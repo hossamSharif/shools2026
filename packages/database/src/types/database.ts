@@ -1422,6 +1422,10 @@ export type Database = {
           object: string
         }[]
       }
+      authorize_manual_sms: {
+        Args: { p_student_id: string }
+        Returns: undefined
+      }
       can_read_student: { Args: { p_student_id: string }; Returns: boolean }
       can_write_student: { Args: { p_student_id: string }; Returns: boolean }
       check_low_sms_credit: {

@@ -348,3 +348,18 @@ verification:
   10 %, but the absolute cost is about one millisecond per request. **Owner decision:** accept it
   as meeting SC-008 ("accountant daily tasks no slower" in practice), or ask for a cached
   per-request grant set later. T046 stays open until then.
+
+## 0042 live apply (T037), 2026-11-26
+
+- **Owner approval:** the owner approved in chat ("Approved"). Applied through Supabase MCP
+  `apply_migration` as `0042_manual_sms_authorization`.
+- **Live checks** (real users, inside a block that always aborts):
+  - school_admin and accountant pass for a student of their own school, and get
+    `FORBIDDEN_STUDENT` for another school's student;
+  - the viewer gets `FORBIDDEN_PERMISSION`;
+  - anon cannot execute the function;
+  - `audit_access_policies()` returns 0 violations.
+- **Types:** regenerated. The temporary cast in `packages/api/src/routes/dispatch-manual.ts` was
+  removed. `pnpm -w typecheck` passes (8/8), and the worker tests pass (10/10).
+- **Deploy order** for the manual-SMS change: 0042 (done), then the worker, then the web app. A
+  worker without the web change would reject the requests (no `x-user-jwt`).

@@ -40,11 +40,9 @@ dispatchManualRouter.post(
 
     // Authorization as the requesting user (sms.send_manual + student in scope).
     const userClient = createUserScopedClient(res.locals.userJwt as string);
-    // TODO(T037): drop the cast once 0042 is applied and DB types are regenerated.
-    const { error: authzErr } = await userClient.rpc(
-      'authorize_manual_sms' as never,
-      { p_student_id: student_id } as never,
-    );
+    const { error: authzErr } = await userClient.rpc('authorize_manual_sms', {
+      p_student_id: student_id,
+    });
     if (authzErr) {
       const code = forbiddenCode(authzErr);
       if (code) return res.status(403).json({ error: code });
