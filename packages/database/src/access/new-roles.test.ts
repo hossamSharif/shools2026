@@ -162,6 +162,12 @@ d('new roles (0045)', () => {
     ] as const)
       expect(isRefusal((await c.rpc(fn, args)).error), fn).toBe(true);
     expect((await c.from('money_event').select('id')).data ?? []).toHaveLength(0);
+    // The money sorts would reveal who owes most through row order alone.
+    for (const p_sort of ['owed_desc', 'oldest_overdue'])
+      expect(
+        isRefusal((await c.rpc('student_directory', { p_school_id: fx.schoolA, p_sort })).error),
+        p_sort,
+      ).toBe(true);
   });
 
   it('US4-5: principal + viewer reads finance as a viewer; removing viewer returns to totals', async () => {

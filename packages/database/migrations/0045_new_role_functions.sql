@@ -17,7 +17,8 @@
 --   allocated scope; write = can_write_student. No anon policy. The web serves
 --   photos only as 5-minute signed URLs.
 -- * student_directory (checked wrapper): fin_status for indicator-only callers
---   is folded to paid / partial / unpaid (no 'overdue', no due-date filter).
+--   is folded to paid / partial / unpaid (no 'overdue', no due-date filter),
+--   and the money sorts need finance.read (they leaked through row order).
 -- ============================================================================
 
 -- ── Helpers ─────────────────────────────────────────────────────────────────
@@ -212,6 +213,8 @@ create policy "student_photos_delete" on storage.objects for delete to authentic
 -- wrapper from 0039 changes; finance.read holders get exactly the 0039 result.
 -- The fin_status filter is applied after folding, so a "partial" filter matches
 -- the label the caller sees; p_due_within_days and 'overdue' are refused.
+-- The money sorts (owed_desc, oldest_overdue) now need finance.read: the row
+-- order alone revealed who owes most to callers who see no amounts.
 CREATE OR REPLACE FUNCTION public.student_directory(p_school_id uuid, p_q text DEFAULT NULL::text, p_stage_id uuid DEFAULT NULL::uuid, p_grade_id uuid DEFAULT NULL::uuid, p_section_id uuid DEFAULT NULL::uuid, p_academic_year_id uuid DEFAULT NULL::uuid, p_status text DEFAULT NULL::text, p_fin_status text DEFAULT NULL::text, p_due_within_days integer DEFAULT NULL::integer, p_unenrolled boolean DEFAULT false, p_missing_phone boolean DEFAULT false, p_sort text DEFAULT 'name'::text)
  RETURNS TABLE(student_id uuid, name text, guardian_name text, guardian_phone text, status text, grade_id uuid, grade_label text, section_id uuid, section_name text, academic_year_id uuid, total_charged numeric, total_paid numeric, total_discount numeric, total_owed numeric, overdue_amount numeric, days_overdue integer, next_due_date date, next_due_amount numeric, installments_total integer, installments_settled integer, fin_status text)
  LANGUAGE plpgsql
@@ -227,9 +230,12 @@ declare
   v_scope uuid[];
 begin
   perform public.assert_perm('students.read');
+  -- The money sorts order rows by amount owed or days overdue, which reveals
+  -- finance data through the order alone: finance.read only (0045).
   if (not v_ind and (p_fin_status is not null or p_due_within_days is not null))
      or (v_only and (p_due_within_days is not null
-                     or p_fin_status not in ('paid', 'partial', 'unpaid'))) then
+                     or p_fin_status not in ('paid', 'partial', 'unpaid')))
+     or (not v_fin and p_sort in ('owed_desc', 'oldest_overdue')) then
     raise exception 'FORBIDDEN_PERMISSION' using
       errcode = 'P0001',
       hint = 'لا تملك صلاحية تنفيذ هذا الإجراء.';

@@ -1761,6 +1761,10 @@ export type Database = {
         }
         Returns: Json
       }
+      register_student: {
+        Args: { p_enrollment: Json; p_student: Json }
+        Returns: string
+      }
       reverse_event: {
         Args: {
           p_idempotency_key: string
@@ -1774,6 +1778,7 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: undefined
       }
+      safe_uuid: { Args: { p: string }; Returns: string }
       school_users_with_perm: {
         Args: { p_key: string; p_school_id: string }
         Returns: string[]
@@ -1971,6 +1976,25 @@ export type Database = {
       superadmin_set_school_admin: {
         Args: { p_user_id: string }
         Returns: undefined
+      }
+      teacher_can_see_student: {
+        Args: { p_student_id: string }
+        Returns: boolean
+      }
+      teacher_roster: {
+        Args: { p_section_id?: string }
+        Returns: {
+          enrollment_status: string
+          grade_id: string
+          grade_label: string
+          guardian_name: string
+          guardian_phone: string
+          name: string
+          photo_path: string
+          section_id: string
+          section_name: string
+          student_id: string
+        }[]
       }
       teacher_section_ids: { Args: never; Returns: string[] }
       topup_sms_credit: {

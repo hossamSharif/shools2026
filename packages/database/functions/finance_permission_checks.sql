@@ -1287,9 +1287,12 @@ declare
   v_scope uuid[];
 begin
   perform public.assert_perm('students.read');
+  -- The money sorts order rows by amount owed or days overdue, which reveals
+  -- finance data through the order alone: finance.read only (0045).
   if (not v_ind and (p_fin_status is not null or p_due_within_days is not null))
      or (v_only and (p_due_within_days is not null
-                     or p_fin_status not in ('paid', 'partial', 'unpaid'))) then
+                     or p_fin_status not in ('paid', 'partial', 'unpaid')))
+     or (not v_fin and p_sort in ('owed_desc', 'oldest_overdue')) then
     raise exception 'FORBIDDEN_PERMISSION' using
       errcode = 'P0001',
       hint = 'لا تملك صلاحية تنفيذ هذا الإجراء.';

@@ -473,4 +473,9 @@ Applied to a copy of the local US3 database (`us4`, Postgres 16, storage schema 
     filter returns X and the `unpaid` filter returns Y; `p_fin_status => 'overdue'` and
     `p_due_within_days` give `FORBIDDEN_PERMISSION`;
   - `audit_access_policies()` still returns 0 violations.
+- **Money sorts (added to 0045):** `p_sort => 'owed_desc'` and `'oldest_overdue'` ordered the
+  rows by amount owed and days overdue for callers who see no amounts, so the order alone
+  revealed who owes most. Before 0045 the principal got 3 rows for both; after, both give
+  `FORBIDDEN_PERMISSION`, and sorting by name still works. The accountant's orders are unchanged
+  (`Y,X,Z` and `X,Y,Z`).
 
