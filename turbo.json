@@ -13,7 +13,8 @@
     "SMS_WEBHOOK_SECRET",
     "INTERNAL_DISPATCH_TOKEN",
     "WORKER_URL",
-    "SCHOOL_TZ"
+    "SCHOOL_TZ",
+    "REQUIRE_INTEGRATION_ENV"
   ],
   "tasks": {
     "build": {
@@ -33,6 +34,10 @@
     "test": {
       "dependsOn": ["^build"],
       "outputs": ["coverage/**"]
+    },
+    "test:access": {
+      "dependsOn": ["^build"],
+      "cache": false
     }
   }
 }
