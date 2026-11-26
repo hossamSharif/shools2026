@@ -479,3 +479,20 @@ Applied to a copy of the local US3 database (`us4`, Postgres 16, storage schema 
   `FORBIDDEN_PERMISSION`, and sorting by name still works. The accountant's orders are unchanged
   (`Y,X,Z` and `X,Y,Z`).
 
+## US4 migration 0045: live apply (T066), 2026-11-26
+
+- **Owner approval:** the owner approved in chat. A pre-check confirmed that the bucket, the
+  photo policies and the new functions did not exist, that the live `student_directory`
+  definition equals the local pre-0045 copy (md5 `c8ac1fe8…`), and that the live allow-list
+  equals the 0044 list this migration extends (48 names, md5 `57a4f1e6…`). Applied through
+  Supabase MCP `apply_migration` as `0045_new_role_functions`.
+- **Transcription check:** the md5 of every function created or replaced (`safe_uuid`,
+  `teacher_can_see_student`, `teacher_roster`, `register_student`, `student_directory`,
+  `reviewed_definer_functions`) and of the four `student_photos_*` policies equals the local
+  copy.
+- **Structure:** the `student-photos` bucket is private (2 MB, JPEG/PNG/WebP);
+  `audit_access_policies()` returns 0 violations; anon cannot execute `teacher_roster`,
+  `register_student` or `teacher_can_see_student`.
+- **Types:** regenerated; identical to the entries added by hand in T068. `pnpm -w typecheck`
+  passes (8/8).
+
