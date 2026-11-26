@@ -26,8 +26,9 @@ d('dashboard_kpis (derived KPI bundle)', () => {
   });
 
   afterAll(async () => {
-    await accountant?.cleanup();
+    // School first: the user's money events block deleting the user (FK NO ACTION).
     await cleanupSchool(service, schoolId);
+    await accountant?.cleanup();
   });
 
   it('computes collected/expenses/net-cash-flow for the current month and an overdue count', async () => {

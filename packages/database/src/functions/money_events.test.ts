@@ -41,8 +41,9 @@ d('US4 money events', () => {
   });
 
   afterAll(async () => {
-    await accountant?.cleanup();
+    // School first: the user's money events block deleting the user (FK NO ACTION).
     await cleanupSchool(service, schoolId);
+    await accountant?.cleanup();
   });
 
   const rpc = (fn: string, args: Record<string, unknown>) => accountant.client.rpc(fn, args);

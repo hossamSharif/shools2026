@@ -496,3 +496,35 @@ Applied to a copy of the local US3 database (`us4`, Postgres 16, storage schema 
 - **Types:** regenerated; identical to the entries added by hand in T068. `pnpm -w typecheck`
   passes (8/8).
 
+## Integration suites on the live project (T033, T045 database part), 2026-11-26
+
+The owner supplied the project keys and approved running the suites on the live project
+(temporary schools, users and payments with unique names, removed at the end).
+
+- **US4 (`new-roles.test.ts`) after 0045:** 14 passed, 1 skipped (the stubbed-allocation case
+  runs on a branch database only).
+- **Full database suite (`pnpm --filter @erp/database test`):** 23 files, 1,334 passed, 2
+  skipped, 1 failed. The failure was `migration-backfill`: 7 school users with no assignment.
+  - **Cause:** test hygiene, not the backfill. In seven Phase 1 files `afterAll` deleted the
+    accountant before `cleanupSchool`. The user delete fails silently while that user's
+    `money_event` rows exist (the FKs from `money_event`, `audit_entry` and `discount` to `user`
+    are NO ACTION). The school delete then removes the role assignment and leaves the user
+    behind. This is also where the 10 orphans found before 0034 came from.
+  - **Fix:** the seven files now clean up the school first (no assertion changed). The 7 orphans
+    (all `t-accountant-…@example.test`, created by this run) were deleted from `public.user`
+    and from Auth.
+  - **Re-run:** `src/functions` 11 files, 36 passed; `migration-backfill` 4 passed; 0 school
+    users without an assignment afterwards.
+- **Phase 1 money suite and T024–T027:** all passed (part of the full run).
+- **`get_advisors`:**
+  - **Security:** `authenticated_security_definer_function_executable` lists the 51 reviewed
+    definer functions; this is intended (each checks its permission, and
+    `definer-exposure.test.ts` passed). `pg_trgm` in `public` (Phase 1) and leaked-password
+    protection (an Auth dashboard setting) are unchanged.
+  - **Performance (new with feature 002):** multiple permissive SELECT policies on
+    `role_assignment`, `role_assignment_stage` and `portal_link` (own row + `users.read`), and
+    unindexed FKs on `access_audit_entry`, `invitation.revoked_by`,
+    `role_assignment.assigned_by`, `role_assignment_stage.stage_id`, the catalogue tables and
+    `user.deactivated_by`. These are left for a follow-up migration (owner review), so T033
+    stays open.
+

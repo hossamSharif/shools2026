@@ -52,8 +52,9 @@ d('apply_fee_payment (concurrent receipt numbering)', () => {
   });
 
   afterAll(async () => {
-    await accountant?.cleanup();
+    // School first: the user's money events block deleting the user (FK NO ACTION).
     await cleanupSchool(service, schoolId);
+    await accountant?.cleanup();
   });
 
   function payFull(studentId: string) {

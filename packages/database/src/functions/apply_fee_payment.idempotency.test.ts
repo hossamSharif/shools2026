@@ -43,8 +43,9 @@ d('apply_fee_payment (idempotent replay)', () => {
   });
 
   afterAll(async () => {
-    await accountant?.cleanup();
+    // School first: the user's money events block deleting the user (FK NO ACTION).
     await cleanupSchool(service, schoolId);
+    await accountant?.cleanup();
   });
 
   function pay(key: string, amount = 200) {
