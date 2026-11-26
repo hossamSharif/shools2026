@@ -528,3 +528,38 @@ The owner supplied the project keys and approved running the suites on the live 
     `user.deactivated_by`. These are left for a follow-up migration (owner review), so T033
     stays open.
 
+## Playwright suite on the live project (T045 web part, T069), 2026-11-26
+
+`next dev` against the live project, `E2E_ACCESS_FIXTURE=1`, the container's preinstalled
+Chromium (the pinned Playwright's headless shell is not installed here; a local, uncommitted
+config only set `launchOptions.executablePath`). No assertion was edited.
+
+- **First run:** 33 passed, 9 skipped, 11 failed.
+- **US4 new roles (`us4-new-roles.spec.ts`):** 3/3 passed (stage-scoped register + enroll with
+  no amounts on the profile, totals-only principal dashboard with `/reports/receivables`
+  forbidden, teacher `/students` forbidden). The fixture teardown left no orphans.
+- **Found and fixed (pre-existing since Phase 1):** 7 failures in US3, US4 money events and
+  US9. Every money RPC committed, but the web action threw a `ZodError`:
+  `student_balance_after` was parsed with the non-negative `Money` schema, and the test student
+  "طالب اختبار 1" is in credit (−1413.00 after many runs of discounts and write-offs). A real
+  school with a student in credit would see an error after every successful post. Output
+  balances now use `SignedMoney`; submitted amounts stay `Money`
+  (`packages/shared/src/schemas/money.test.ts`). **Re-run:** US3, US4 money events and US9
+  18 passed.
+- **Remaining failures, none caused by feature 002:**
+  - `us1-onboard-school`: expects Arabic-Indic digits ("١٬٠٠٠"); the app deliberately formats
+    with Western digits (`lib/format/number.ts`, LOCALE `en-US`). Stale assertion.
+  - `us7-reminders` (2): the manual reminder needs the worker; `WORKER_URL` is not set in this
+    run ("WORKER_URL / INTERNAL_DISPATCH_TOKEN غير مضبوطة").
+  - `us8-lifecycle` grace: the seeded grace school's subscription has aged into the locked state
+    (seed dates from July). Data ageing.
+  - `students-directory` create → edit: the first click on a row menu right after the create
+    dialog closes does nothing; a second click opens it. Reproduced identically with the
+    pre-T068 student screens restored, so it predates this feature.
+- **Gauntlet row check (Article X), read-only:** the last payment of the run in Gauntlet School A
+  (receipt 43, 7.00) is fully allocated (7.00), has its `apply_fee_payment` audit row, and its
+  receipt number is unique. The school's receipts are gapless; 7 payments were recorded during
+  the run.
+- **Cleanup:** the temporary students "طالب مؤقت …" (one left by the failed spec, three by the
+  reproduction) were deleted; none had money events.
+
