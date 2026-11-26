@@ -16,6 +16,8 @@
 --   <school_id>/<student_id>/<file>. Read = can_read_student or the teacher's
 --   allocated scope; write = can_write_student. No anon policy. The web serves
 --   photos only as 5-minute signed URLs.
+-- * student_directory (checked wrapper): fin_status for indicator-only callers
+--   is folded to paid / partial / unpaid (no 'overdue', no due-date filter).
 -- ============================================================================
 
 -- ── Helpers ─────────────────────────────────────────────────────────────────
@@ -204,6 +206,79 @@ create policy "student_photos_delete" on storage.objects for delete to authentic
     and (storage.foldername(name))[1] = (select public.current_school_id())::text
     and public.can_write_student(public.safe_uuid((storage.foldername(name))[2]))
   );
+
+-- ── student_directory: fee indicator is three-state for indicator-only callers
+-- (spec FR: "paid / partially paid / unpaid, no amounts"). Only the checked
+-- wrapper from 0039 changes; finance.read holders get exactly the 0039 result.
+-- The fin_status filter is applied after folding, so a "partial" filter matches
+-- the label the caller sees; p_due_within_days and 'overdue' are refused.
+CREATE OR REPLACE FUNCTION public.student_directory(p_school_id uuid, p_q text DEFAULT NULL::text, p_stage_id uuid DEFAULT NULL::uuid, p_grade_id uuid DEFAULT NULL::uuid, p_section_id uuid DEFAULT NULL::uuid, p_academic_year_id uuid DEFAULT NULL::uuid, p_status text DEFAULT NULL::text, p_fin_status text DEFAULT NULL::text, p_due_within_days integer DEFAULT NULL::integer, p_unenrolled boolean DEFAULT false, p_missing_phone boolean DEFAULT false, p_sort text DEFAULT 'name'::text)
+ RETURNS TABLE(student_id uuid, name text, guardian_name text, guardian_phone text, status text, grade_id uuid, grade_label text, section_id uuid, section_name text, academic_year_id uuid, total_charged numeric, total_paid numeric, total_discount numeric, total_owed numeric, overdue_amount numeric, days_overdue integer, next_due_date date, next_due_amount numeric, installments_total integer, installments_settled integer, fin_status text)
+ LANGUAGE plpgsql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $function$
+declare
+  v_fin   boolean := public.has_perm('finance.read');
+  v_ind   boolean := v_fin or public.has_perm('students.fee_indicator');
+  -- Indicator only (no finance.read): paid / partial / unpaid, no amounts and
+  -- no dates, so 'overdue' is folded into partial/unpaid (0045).
+  v_only  boolean := v_ind and not v_fin;
+  v_scope uuid[];
+begin
+  perform public.assert_perm('students.read');
+  if (not v_ind and (p_fin_status is not null or p_due_within_days is not null))
+     or (v_only and (p_due_within_days is not null
+                     or p_fin_status not in ('paid', 'partial', 'unpaid'))) then
+    raise exception 'FORBIDDEN_PERMISSION' using
+      errcode = 'P0001',
+      hint = 'لا تملك صلاحية تنفيذ هذا الإجراء.';
+  end if;
+  v_scope := public.perm_scope('students.read');
+
+  return query
+  select x.student_id, x.name, x.guardian_name, x.guardian_phone, x.status,
+         x.grade_id, x.grade_label, x.section_id, x.section_name, x.academic_year_id,
+         x.total_charged, x.total_paid, x.total_discount, x.total_owed, x.overdue_amount,
+         x.days_overdue, x.next_due_date, x.next_due_amount, x.installments_total,
+         x.installments_settled, x.fin_status
+    from (
+      select d.ordinality,
+             d.student_id,
+             d.name,
+             d.guardian_name,
+             d.guardian_phone,
+             d.status,
+             d.grade_id,
+             d.grade_label,
+             d.section_id,
+             d.section_name,
+             d.academic_year_id,
+             case when v_fin then d.total_charged end as total_charged,
+             case when v_fin then d.total_paid end as total_paid,
+             case when v_fin then d.total_discount end as total_discount,
+             case when v_fin then d.total_owed end as total_owed,
+             case when v_fin then d.overdue_amount end as overdue_amount,
+             case when v_fin then d.days_overdue end as days_overdue,
+             case when v_fin then d.next_due_date end as next_due_date,
+             case when v_fin then d.next_due_amount end as next_due_amount,
+             case when v_fin then d.installments_total end as installments_total,
+             case when v_fin then d.installments_settled end as installments_settled,
+             case when v_fin then d.fin_status
+                  when v_ind then
+                    case when d.fin_status = 'overdue'
+                         then case when d.total_paid > 0 then 'partial' else 'unpaid' end
+                         else d.fin_status end
+             end as fin_status
+        from public.student_directory_unchecked(p_school_id, p_q, p_stage_id, p_grade_id, p_section_id, p_academic_year_id, p_status,
+               case when v_only then null else p_fin_status end,
+               p_due_within_days, p_unenrolled, p_missing_phone, p_sort) with ordinality as d
+       where v_scope is null or public.student_stage_id(d.student_id) = any(v_scope)
+    ) x
+   where not v_only or p_fin_status is null or x.fin_status = p_fin_status
+   order by x.ordinality;
+end;
+$function$;
 
 -- ── Reviewed allow-list (0041): + teacher_roster, register_student, teacher_can_see_student
 create or replace function public.reviewed_definer_functions()

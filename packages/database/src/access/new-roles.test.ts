@@ -230,6 +230,37 @@ d('new roles (0045)', () => {
       .eq('id', fx.enrollments.Y);
   });
 
+  it('fee indicator: indicator-only callers see paid / partial / unpaid, no overdue, no due filter', async () => {
+    const row = {
+      school_id: fx.schoolA,
+      role: 'student_affairs' as const,
+      permission_key: 'students.fee_indicator',
+      enabled: true,
+    };
+    expect((await service.from('school_role_permission').upsert(row)).error).toBeNull();
+    try {
+      const c = fx.users.sa.client;
+      const { data, error } = await c.rpc('student_directory', { p_school_id: fx.schoolA });
+      expect(error).toBeNull();
+      const rows = data as { fin_status: string | null; total_owed: unknown }[];
+      for (const r of rows) {
+        expect([null, 'paid', 'partial', 'unpaid']).toContain(r.fin_status);
+        expect(r.total_owed).toBeNull();
+      }
+      for (const args of [{ p_fin_status: 'overdue' }, { p_due_within_days: 30 }])
+        expect(
+          isRefusal((await c.rpc('student_directory', { p_school_id: fx.schoolA, ...args })).error),
+        ).toBe(true);
+    } finally {
+      await service
+        .from('school_role_permission')
+        .delete()
+        .eq('school_id', fx.schoolA)
+        .eq('role', 'student_affairs')
+        .eq('permission_key', 'students.fee_indicator');
+    }
+  });
+
   it('FR-016: teacher_roster is empty without allocations and refused for others', async () => {
     const { data, error } = await fx.users.teacher.client.rpc('teacher_roster');
     expect(error).toBeNull();

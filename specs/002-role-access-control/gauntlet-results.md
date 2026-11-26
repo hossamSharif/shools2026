@@ -463,3 +463,14 @@ Applied to a copy of the local US3 database (`us4`, Postgres 16, storage schema 
   - **writes:** student affairs can upload for X, but not to a non-uuid path or a school B
     prefix; `saMiddle` cannot upload for X, and the teacher cannot upload at all; the admin can
     delete X's photo.
+- **Fee indicator (added to 0045 after the first run):** the checked `student_directory` wrapper
+  now folds `overdue` into `partial` or `unpaid` for indicator-only callers (spec: "paid /
+  partially paid / unpaid, no amounts"):
+  - **finance holders:** the accountant's results are byte-identical before and after 0045 (md5
+    of all rows, of the `overdue` filter and of the 30-day due filter);
+  - **indicator-only (student affairs with `students.fee_indicator` enabled):** X shows `partial`
+    and Y `unpaid` (the accountant sees both as `overdue`), with every amount NULL. The `partial`
+    filter returns X and the `unpaid` filter returns Y; `p_fin_status => 'overdue'` and
+    `p_due_within_days` give `FORBIDDEN_PERMISSION`;
+  - `audit_access_policies()` still returns 0 violations.
+
