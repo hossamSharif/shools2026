@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import path from 'node:path';
+import { createClient } from '@supabase/supabase-js';
 
 /**
  * US1 E2E (T030): super-admin creates a school, sets its subscription, and adds
@@ -8,12 +9,28 @@ import path from 'node:path';
  *
  * Auth: seeded super-admin's storageState (see tests/global-setup.ts) — the
  * app has no /login UI to drive interactively.
+ *
+ * Cleanup: with SUPABASE_SERVICE_ROLE_KEY set, the school created here is
+ * deleted afterwards (its subscription and top-ups cascade), so repeated runs
+ * leave no "مدرسة اختبار …" rows behind.
  */
 test.use({ storageState: path.resolve(__dirname, '.auth/super_admin.json') });
+
+const serviceUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let createdName: string | null = null;
+
+test.afterEach(async () => {
+  if (!createdName || !serviceUrl || !serviceKey) return;
+  const service = createClient(serviceUrl, serviceKey, { auth: { persistSession: false } });
+  await service.from('school').delete().eq('name', createdName);
+  createdName = null;
+});
 
 test.describe('US1 — onboard a school tenant', () => {
   test('create school + subscription + credit, then verify in list', async ({ page }) => {
     const name = `مدرسة اختبار ${Date.now()}`;
+    createdName = name;
 
     await page.goto('/schools/new');
 

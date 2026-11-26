@@ -781,3 +781,9 @@ The owner accepted the recommendation ("Do what you recommend"):
 
   **`pnpm -w lint`: 8/8 passed** (one warning, an unused variable in a Phase 1 test).
   `pnpm -w typecheck` 8/8; `next build` passes its lint step.
+- **US1 test schools:** `us1-onboard-school.spec.ts` now deletes the school it creates in
+  `afterEach` (with `SUPABASE_SERVICE_ROLE_KEY`; subscription and top-ups cascade). Re-run on
+  live: passed, and no new school remained. The 14 "مدرسة اختبار …" schools left by earlier
+  runs were deleted, each after a check that it had no users, students, money events or
+  accounts (only a subscription and SMS top-ups). The live project now holds only the five
+  seeded Gauntlet schools, with no orphaned subscriptions or top-ups.
