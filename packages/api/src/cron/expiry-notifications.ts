@@ -5,9 +5,9 @@ import type { Database } from '@erp/database/types';
 /**
  * Expiring-soon notification cron (T132, US9). Calls the DB-side
  * `emit_expiry_notifications` RPC (SECURITY DEFINER, service-role only —
- * EXECUTE is revoked from authenticated/anon), which notifies school_admin/
- * accountant users of schools whose subscription expires within the lookahead
- * window, at most once per calendar day (Africa/Khartoum) per school. All
+ * EXECUTE is revoked from authenticated/anon), which notifies the active users
+ * holding `finance.write` (since migration 0040) of schools whose subscription
+ * expires within the lookahead window, at most once per calendar day (Africa/Khartoum) per school. All
  * dedup/idempotency logic lives in the DB function; this file is a thin
  * scheduler around it.
  */
