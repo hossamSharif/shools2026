@@ -53,7 +53,7 @@ function b64urlEncode(input: string): string {
     .replace(/=+$/, '');
 }
 
-export default async function globalSetup() {
+export default async function globalSetup(): Promise<void | (() => Promise<void>)> {
   loadRootEnv();
   const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -75,29 +75,71 @@ export default async function globalSetup() {
       console.warn(`[global-setup] sign-in failed for ${creds.email}: ${error?.message}`);
       continue;
     }
-
-    const cookieValue = 'base64-' + b64urlEncode(JSON.stringify(data.session));
-    const domain = 'localhost';
-
-    const storageState = {
-      cookies: [
-        {
-          name: cookieName,
-          value: cookieValue,
-          domain,
-          path: '/',
-          expires: -1,
-          httpOnly: false,
-          secure: false,
-          sameSite: 'Lax' as const,
-        },
-      ],
-      origins: [],
-    };
-
-    fs.writeFileSync(
-      path.join(AUTH_DIR, `${key}.json`),
-      JSON.stringify(storageState, null, 2),
-    );
+    writeStorageState(cookieName, key, data.session);
   }
+
+  // Spec 002 (T069): the role fixture of the access matrix, only on request.
+  if (process.env.E2E_ACCESS_FIXTURE === '1') return setupAccessFixture(cookieName);
 }
+
+function writeStorageState(cookieName: string, key: string, session: object) {
+  const storageState = {
+    cookies: [
+      {
+        name: cookieName,
+        value: 'base64-' + b64urlEncode(JSON.stringify(session)),
+        domain: 'localhost',
+        path: '/',
+        expires: -1,
+        httpOnly: false,
+        secure: false,
+        sameSite: 'Lax' as const,
+      },
+    ],
+    origins: [],
+  };
+  fs.writeFileSync(path.join(AUTH_DIR, `${key}.json`), JSON.stringify(storageState, null, 2));
+}
+
+/** Where the US4 spec reads the fixture's ids (schools, grades, students). */
+export const ACCESS_FIXTURE_FILE = path.join(AUTH_DIR, 'access-fixture.json');
+
+/** Fixture users with a browser session, as `tests/.auth/access_<name>.json`. */
+export const ACCESS_BROWSER_USERS = ['sa', 'saMiddle', 'principal', 'teacher', 'adminA'] as const;
+
+/**
+ * Builds the access-matrix fixture (`buildAccessFixture`: two schools, every
+ * staff role, students X/Y/Z) with the service key, writes a storageState per
+ * browser user and the ids the spec needs, and returns the teardown that
+ * removes it all. Loaded lazily so the default setup never imports it.
+ */
+async function setupAccessFixture(cookieName: string): Promise<() => Promise<void>> {
+  const { buildAccessFixture, getServiceClient } = await import('@erp/database/test-fixtures');
+  const service = getServiceClient();
+  if (!service) throw new Error('[global-setup] E2E_ACCESS_FIXTURE=1 needs SUPABASE_SERVICE_ROLE_KEY');
+  const fx = await buildAccessFixture(service);
+  for (const name of ACCESS_BROWSER_USERS) {
+    const { data } = await fx.users[name].client.auth.getSession();
+    if (!data.session) throw new Error(`[global-setup] no session for fixture user ${name}`);
+    writeStorageState(cookieName, `access_${name}`, data.session);
+  }
+  const { users, cleanup, ...ids } = fx;
+  fs.writeFileSync(
+    ACCESS_FIXTURE_FILE,
+    JSON.stringify(
+      {
+        ...ids,
+        users: Object.fromEntries(
+          Object.entries(users).map(([k, u]) => [k, { userId: u.userId, email: u.email }]),
+        ),
+      },
+      null,
+      2,
+    ),
+  );
+  return async () => {
+    await cleanup();
+    fs.rmSync(ACCESS_FIXTURE_FILE, { force: true });
+  };
+}
+
