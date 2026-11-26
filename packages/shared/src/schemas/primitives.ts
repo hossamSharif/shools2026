@@ -10,6 +10,14 @@ import { z } from 'zod';
 export const Money = z.string().regex(/^\d{1,12}(\.\d{1,2})?$/, 'invalid money amount');
 export type Money = z.infer<typeof Money>;
 
+/**
+ * A derived balance, which may be negative (a student in credit after
+ * discounts or write-offs, for example). Output schemas only: amounts a user
+ * submits stay `Money` (non-negative).
+ */
+export const SignedMoney = z.string().regex(/^-?\d{1,12}(\.\d{1,2})?$/, 'invalid money amount');
+export type SignedMoney = z.infer<typeof SignedMoney>;
+
 /** UUID (v4-shaped) used for all entity identifiers. */
 export const Uuid = z.string().uuid();
 export type Uuid = z.infer<typeof Uuid>;

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Money, Uuid, IdempotencyKey } from './primitives.js';
+import { Money, SignedMoney, Uuid, IdempotencyKey } from './primitives.js';
 
 /**
  * Money RPC i/o schemas (US3/US4). Amounts cross the wire as decimal strings
@@ -27,10 +27,10 @@ export type ApplyFeePaymentInput = z.infer<typeof ApplyFeePaymentInput>;
 export const ApplyFeePaymentOutput = z.object({
   money_event_id: Uuid,
   receipt_no: z.number().int().positive(),
-  account_balance_after: Money,
-  student_balance_after: Money,
+  account_balance_after: SignedMoney,
+  student_balance_after: SignedMoney,
   allocations: z.array(
-    z.object({ installment_id: Uuid, running_balance_after: Money }),
+    z.object({ installment_id: Uuid, running_balance_after: SignedMoney }),
   ),
   idempotent_replay: z.boolean().optional(),
 });
@@ -51,7 +51,7 @@ export type RecordExpenseInput = z.infer<typeof RecordExpenseInput>;
 
 export const RecordExpenseOutput = z.object({
   money_event_id: Uuid,
-  account_balance_after: Money,
+  account_balance_after: SignedMoney,
 });
 export type RecordExpenseOutput = z.infer<typeof RecordExpenseOutput>;
 
@@ -73,8 +73,8 @@ export type RecordTransferInput = z.infer<typeof RecordTransferInput>;
 
 export const RecordTransferOutput = z.object({
   money_event_id: Uuid,
-  from_balance_after: Money,
-  to_balance_after: Money,
+  from_balance_after: SignedMoney,
+  to_balance_after: SignedMoney,
 });
 export type RecordTransferOutput = z.infer<typeof RecordTransferOutput>;
 
@@ -92,8 +92,8 @@ export type RecordRefundInput = z.infer<typeof RecordRefundInput>;
 
 export const RecordRefundOutput = z.object({
   money_event_id: Uuid,
-  account_balance_after: Money,
-  student_balance_after: Money,
+  account_balance_after: SignedMoney,
+  student_balance_after: SignedMoney,
 });
 export type RecordRefundOutput = z.infer<typeof RecordRefundOutput>;
 
@@ -109,7 +109,7 @@ export type RecordAdjustmentInput = z.infer<typeof RecordAdjustmentInput>;
 
 export const RecordAdjustmentOutput = z.object({
   money_event_id: Uuid,
-  student_balance_after: Money,
+  student_balance_after: SignedMoney,
 });
 export type RecordAdjustmentOutput = z.infer<typeof RecordAdjustmentOutput>;
 
@@ -130,7 +130,7 @@ export type ApplyDiscountInput = z.infer<typeof ApplyDiscountInput>;
 export const ApplyDiscountOutput = z.object({
   discount_id: Uuid,
   computed_amount: Money,
-  student_balance_after: Money,
+  student_balance_after: SignedMoney,
 });
 export type ApplyDiscountOutput = z.infer<typeof ApplyDiscountOutput>;
 
