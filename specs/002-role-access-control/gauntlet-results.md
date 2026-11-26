@@ -653,3 +653,31 @@ school A (a day apart) and one in school B. `audit_access_policies()` returns 0 
 - **Playwright, on live:** `us6-access-audit`, `us5-optional-permission` and the three
   `us4-new-roles` tests passed (5); `us3-invite-teacher` skipped (no worker in this run).
 - No orphaned test users remain.
+
+## US7 portal roles (T079–T083), 2026-11-26
+
+No migration: the portal roles were defined and scoped in 0034–0041. Runs on the live project.
+
+- **`portal.test.ts` (T079):** 7 passed.
+  - **Guardian of X:** `student` and `enrollment` give X only; `student_financial_summary(X)`
+    and `student_installments(X)` work, while Y gives `FORBIDDEN_STUDENT`. Every finance table
+    (`money_event`, `account`, `receipt_counter`, `installment`, `sms_message_log`,
+    `payment_allocation`, `discount`) gives 0 rows; `dashboard_kpis`, `receivables_aging`,
+    `account_balance`, `student_statement(X)` and `student_payments(X)` are refused.
+  - **Siblings:** after linking Z, the guardian sees X and Z, never Y. After the service client
+    deletes the X link, the next request returns Z only, and X's summary becomes
+    `FORBIDDEN_STUDENT` (FR-018).
+  - **Student Y:** sees Y only; every finance table and function is closed, including
+    `student_financial_summary(Y)`.
+  - **No API writes:** `portal_link` inserts by the guardian or the school admin are refused
+    (FR-017); `set_user_roles` on the guardian gives `NOT_FOUND`.
+- **`login-portal-refused.spec.ts` (T080):** 2 passed. The guardian and the student sign in at
+  `/login`, stay there with "بوابة أولياء الأمور والطلاب غير متاحة بعد", hold no auth cookie
+  afterwards, and `/home` sends them back to `/login`.
+- **T081, T082:** already in place from US1/US3 (`requireStaff()` and the login form sign a
+  portal-only user out with `?e=portal`; `/users` shows portal users as read-only
+  "مستخدم بوابة" rows with no edit control). Confirmed by the tests above.
+- **T083:** nothing was deferred. `FIXTURE_USERS` includes `guardianX` and `studentY`, and
+  `matrix.test.ts` probes both against every data set and derived function; it passed on live
+  (1,115 cases) after 0047.
+- No orphaned test users remain.
