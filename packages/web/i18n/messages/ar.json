@@ -85,7 +85,8 @@
     },
     "save": "حفظ التغييرات",
     "tabUsers": "المستخدمون",
-    "tabPermissions": "الصلاحيات"
+    "tabPermissions": "الصلاحيات",
+    "tabAudit": "سجل الصلاحيات"
   },
   "invite": {
     "title": "دعوة موظف",
@@ -161,5 +162,55 @@
     "viewOnly": "للاطلاع فقط: تعديل الصلاحيات متاح لمدير المدرسة",
     "switchLabel": "{role}: {permission}",
     "saved": "تم الحفظ"
+  },
+  "accessAudit": {
+    "title": "سجل الصلاحيات",
+    "subtitle": "كل تغيير في الأدوار والصلاحيات والدعوات، ولا يمكن تعديله أو حذفه",
+    "filterUser": "كل المستخدمين",
+    "filterAction": "كل الإجراءات",
+    "filterFrom": "من تاريخ",
+    "filterTo": "إلى تاريخ",
+    "export": "تصدير CSV",
+    "empty": "لا توجد سجلات مطابقة",
+    "older": "السجلات الأقدم",
+    "newest": "الأحدث",
+    "colTime": "التاريخ",
+    "colActor": "المنفّذ",
+    "colTarget": "المستخدم المستهدف",
+    "colAction": "الإجراء",
+    "colChange": "التغيير",
+    "colBefore": "قبل",
+    "colAfter": "بعد",
+    "system": "النظام",
+    "actions": {
+      "invitation_sent": "إرسال دعوة",
+      "invitation_accepted": "قبول دعوة",
+      "invitation_revoked": "إلغاء دعوة",
+      "invitation_expired": "انتهاء صلاحية دعوة",
+      "role_added": "إضافة دور",
+      "role_removed": "إزالة دور",
+      "stage_scope_changed": "تعديل نطاق المراحل",
+      "user_deactivated": "إيقاف مستخدم",
+      "user_reactivated": "إعادة تفعيل مستخدم",
+      "optional_permission_changed": "تعديل صلاحية اختيارية"
+    },
+    "fields": {
+      "roles": "الأدوار",
+      "stages": "المراحل",
+      "status": "الحالة",
+      "state": "حالة الدعوة",
+      "permission": "الصلاحية",
+      "email": "البريد"
+    },
+    "states": {
+      "pending": "معلّقة",
+      "accepted": "مقبولة",
+      "revoked": "ملغاة",
+      "expired": "منتهية"
+    },
+    "on": "مفعّلة",
+    "off": "غير مفعّلة",
+    "allStages": "كل المراحل",
+    "none": "لا شيء"
   }
 }

@@ -1638,6 +1638,28 @@ export type Database = {
         Args: { p_invitation_id: string }
         Returns: string
       }
+      list_access_audit: {
+        Args: {
+          p_action?: Database["public"]["Enums"]["access_audit_action"]
+          p_before_id?: number
+          p_from?: string
+          p_limit?: number
+          p_to?: string
+          p_user_id?: string
+        }
+        Returns: {
+          action: Database["public"]["Enums"]["access_audit_action"]
+          actor_id: string
+          actor_name: string
+          after: Json
+          before: Json
+          id: number
+          occurred_at: string
+          target_email: string
+          target_name: string
+          target_user_id: string
+        }[]
+      }
       list_invitations: {
         Args: never
         Returns: {
