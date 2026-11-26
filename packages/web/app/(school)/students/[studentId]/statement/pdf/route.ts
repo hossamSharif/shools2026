@@ -1,3 +1,4 @@
+import { hasPermission, requireAuth } from '../../../../../../lib/auth/guard.js';
 import { NextResponse } from 'next/server';
 import type * as ReactPdf from '@react-pdf/renderer';
 import { notFound } from 'next/navigation';
@@ -45,6 +46,11 @@ const { renderToBuffer } = (eval('require') as NodeRequire)('@react-pdf/renderer
  * derived from Postgres and is only formatted here (Article VI).
  */
 export async function GET(_request: Request, { params }: { params: { studentId: string } }) {
+  // Route handlers answer 403 instead of redirecting (contracts/web-routes.md).
+  const ctx = await requireAuth();
+  if (!hasPermission(ctx, 'finance.read')) {
+    return NextResponse.json({ error: 'FORBIDDEN_PERMISSION' }, { status: 403 });
+  }
   const supabase = createSupabaseServerClient();
   const { data: student } = await supabase
     .from('student')

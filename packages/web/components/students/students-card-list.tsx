@@ -5,6 +5,7 @@ import { Card, CardContent } from '@erp/ui';
 import { formatCurrency } from '../../lib/format/currency.js';
 import { formatDate } from '../../lib/format/date.js';
 import type { StudentDirectoryRow } from '../../lib/queries/students.js';
+import type { StudentCaps } from '../../lib/auth/student-caps.js';
 import { FinStatusBadge } from './fin-status-badge.js';
 import { StudentRowActions } from './student-row-actions.js';
 import { STUDENT_STATUS_AR } from './labels.js';
@@ -12,7 +13,13 @@ import { STUDENT_STATUS_AR } from './labels.js';
 /** Stacked-card fallback for the students list below `md`, where the table is
  * too cramped even with horizontal scroll. Carries the same fields as the
  * table so nothing is only reachable on desktop. */
-export function StudentsCardList({ students }: { students: StudentDirectoryRow[] }) {
+export function StudentsCardList({
+  students,
+  caps,
+}: {
+  students: StudentDirectoryRow[];
+  caps: StudentCaps;
+}) {
   if (students.length === 0) {
     return (
       <Card>
@@ -37,7 +44,7 @@ export function StudentsCardList({ students }: { students: StudentDirectoryRow[]
                 >
                   {s.name}
                 </Link>
-                <StudentRowActions row={s} />
+                <StudentRowActions row={s} caps={caps} />
               </div>
 
               <div className="grid grid-cols-2 gap-1 text-sm text-gray-600">
@@ -50,16 +57,25 @@ export function StudentsCardList({ students }: { students: StudentDirectoryRow[]
                     : 'غير مسجّل'}
                 </span>
                 <span>حالة الطالب: {STUDENT_STATUS_AR[s.status]}</span>
-                <span className={Number(s.total_owed) > 0 ? 'text-danger' : undefined}>
-                  المستحق: {formatCurrency(s.total_owed)}
-                </span>
-                <span>
-                  الاستحقاق القادم:{' '}
-                  {s.next_due_date ? formatDate(`${s.next_due_date}T00:00:00Z`) : '—'}
-                </span>
+                {caps.finance ? (
+                  <>
+                    <span className={Number(s.total_owed) > 0 ? 'text-danger' : undefined}>
+                      المستحق: {formatCurrency(s.total_owed ?? '0')}
+                    </span>
+                    <span>
+                      الاستحقاق القادم:{' '}
+                      {s.next_due_date ? formatDate(`${s.next_due_date}T00:00:00Z`) : '—'}
+                    </span>
+                  </>
+                ) : null}
               </div>
 
-              <FinStatusBadge status={s.fin_status} />
+              {caps.indicator ? (
+                <FinStatusBadge
+                  status={s.fin_status}
+                  variant={caps.finance ? 'student' : 'indicator'}
+                />
+              ) : null}
             </CardContent>
           </Card>
         </li>

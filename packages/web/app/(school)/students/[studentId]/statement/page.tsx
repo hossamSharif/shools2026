@@ -1,3 +1,4 @@
+import { requirePermission } from '../../../../../lib/auth/guard.js';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent } from '@erp/ui';
@@ -8,6 +9,7 @@ import { StatementTable } from '../../../../../components/statement/statement-ta
 
 /** Student statement page (US5, T098). RTL, running balance + total owed. */
 export default async function StatementPage({ params }: { params: { studentId: string } }) {
+  await requirePermission('finance.read');
   const supabase = createSupabaseServerClient();
   const { data: student } = await supabase
     .from('student')

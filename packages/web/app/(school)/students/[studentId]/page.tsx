@@ -9,9 +9,12 @@ import {
   CalendarClock,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@erp/ui';
-import { requireAuth } from '../../../../lib/auth/guard.js';
+import { requirePermission } from '../../../../lib/auth/guard.js';
+import { studentCaps } from '../../../../lib/auth/student-caps.js';
+import { signedStudentPhotoUrl } from '../../../../lib/storage/student-photos.js';
 import { createSupabaseServerClient } from '../../../../lib/supabase/server.js';
 import {
+  studentDirectory,
   studentFinancialSummary,
   studentInstallmentSchedule,
   studentPayments,
@@ -26,6 +29,7 @@ import { PaymentsHistory } from '../../../../components/students/payments-histor
 import { NextDueBanner } from '../../../../components/students/next-due-banner.js';
 import { StudentProfileActions } from '../../../../components/students/student-profile-actions.js';
 import { STUDENT_STATUS_AR } from '../../../../components/students/labels.js';
+import { FinStatusBadge } from '../../../../components/students/fin-status-badge.js';
 
 /**
  * Student profile — the one screen that answers everything about a student:
@@ -35,6 +39,11 @@ import { STUDENT_STATUS_AR } from '../../../../components/students/labels.js';
  * Every figure comes from a Postgres function (`student_financial_summary`,
  * `student_installments`, `student_payments`, `student_statement`) — this page
  * does no money math (Article II/VI).
+ *
+ * Spec 002 (T068): `students.read` opens the page. The finance sections and
+ * the finance functions are skipped entirely without `finance.read`; the
+ * indicator-only caller sees a three-state fee badge. The photo is served as a
+ * 5-minute signed URL from the private bucket, never a public URL (FR-008a).
  */
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +53,7 @@ interface StudentRecord {
   guardian_name: string | null;
   guardian_phone: string | null;
   status: 'active' | 'withdrawn' | 'graduated';
+  photo_path: string | null;
   created_at: string;
 }
 
@@ -63,17 +73,71 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+/** Identity card shared by the finance and non-finance views (unchanged fields + photo). */
+function StudentInfoCard({
+  student,
+  enrollment,
+  classLabel,
+  photoUrl,
+}: {
+  student: StudentRecord;
+  enrollment: EnrollmentRecord | null;
+  classLabel: string | null;
+  photoUrl: string | null;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>بيانات الطالب</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        {photoUrl ? (
+          // A 5-minute signed URL from the private bucket; next/image would cache it.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={photoUrl}
+            alt={`صورة ${student.name}`}
+            data-testid="student-photo"
+            className="h-24 w-24 shrink-0 rounded-md border border-border object-cover"
+          />
+        ) : null}
+        <dl className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+          <InfoRow label="اسم الطالب" value={student.name} />
+          <InfoRow label="ولي الأمر" value={student.guardian_name ?? '—'} />
+          <InfoRow
+            label="هاتف ولي الأمر"
+            value={
+              student.guardian_phone ?? (
+                <span className="text-warning">غير مسجّل — لن تصله الرسائل</span>
+              )
+            }
+          />
+          <InfoRow label="حالة الطالب" value={STUDENT_STATUS_AR[student.status]} />
+          <InfoRow label="الصف / الشعبة" value={classLabel ?? 'غير مسجّل'} />
+          <InfoRow label="العام الدراسي" value={enrollment?.academic_year?.label ?? '—'} />
+          <InfoRow
+            label="تاريخ التسجيل"
+            value={enrollment ? formatDate(enrollment.created_at) : '—'}
+          />
+          <InfoRow label="تاريخ الإضافة" value={formatDate(student.created_at)} />
+        </dl>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default async function StudentProfilePage({
   params,
 }: {
   params: { studentId: string };
 }) {
-  await requireAuth();
+  const ctx = await requirePermission('students.read');
+  const caps = studentCaps(ctx);
   const supabase = createSupabaseServerClient();
 
   const { data: student } = await supabase
     .from('student')
-    .select('id, name, guardian_name, guardian_phone, status, created_at')
+    .select('id, name, guardian_name, guardian_phone, status, photo_path, created_at')
     .eq('id', params.studentId)
     .maybeSingle<StudentRecord>();
   if (!student) notFound();
@@ -86,12 +150,7 @@ export default async function StudentProfilePage({
     .limit(1)
     .maybeSingle<EnrollmentRecord>();
 
-  const [summary, installments, payments, statement] = await Promise.all([
-    studentFinancialSummary(student.id),
-    studentInstallmentSchedule(student.id),
-    studentPayments(student.id),
-    studentStatement(student.id),
-  ]);
+  const photoUrl = await signedStudentPhotoUrl(student.photo_path);
 
   const classLabel = enrollment?.grade?.label_ar
     ? [enrollment.grade.label_ar, enrollment.section?.name].filter(Boolean).join(' - ')
@@ -99,6 +158,52 @@ export default async function StudentProfilePage({
   const subtitle = [classLabel ?? 'غير مسجّل في صف', enrollment?.academic_year?.label]
     .filter(Boolean)
     .join(' · ');
+
+  const header = (
+    <>
+      <PageHeader
+        title={student.name}
+        subtitle={subtitle}
+        actions={<StudentProfileActions student={student} caps={caps} />}
+      />
+      <StudentInfoCard
+        student={student}
+        enrollment={enrollment ?? null}
+        classLabel={classLabel}
+        photoUrl={photoUrl}
+      />
+    </>
+  );
+
+  if (!caps.finance) {
+    // Indicator only: the directory's three-state fin_status for this student.
+    const feeStatus =
+      caps.indicator && ctx.schoolId
+        ? ((await studentDirectory(ctx.schoolId, { q: student.name })).find(
+            (r) => r.student_id === student.id,
+          )?.fin_status ?? null)
+        : null;
+    return (
+      <div dir="rtl" className="space-y-6">
+        {header}
+        {caps.indicator ? (
+          <Card>
+            <CardContent className="flex items-center gap-3 p-4">
+              <span className="text-sm text-muted-foreground">حالة الرسوم</span>
+              <FinStatusBadge status={feeStatus} variant="indicator" />
+            </CardContent>
+          </Card>
+        ) : null}
+      </div>
+    );
+  }
+
+  const [summary, installments, payments, statement] = await Promise.all([
+    studentFinancialSummary(student.id),
+    studentInstallmentSchedule(student.id),
+    studentPayments(student.id),
+    studentStatement(student.id),
+  ]);
 
   // Display-only bridge between the installment rows and the canonical balance
   // (see the note by the reconciliation strip below). Summing already-derived
@@ -152,39 +257,7 @@ export default async function StudentProfilePage({
 
   return (
     <div dir="rtl" className="space-y-6">
-      <PageHeader
-        title={student.name}
-        subtitle={subtitle}
-        actions={<StudentProfileActions student={student} />}
-      />
-
-      <Card>
-        <CardHeader>
-          <CardTitle>بيانات الطالب</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            <InfoRow label="اسم الطالب" value={student.name} />
-            <InfoRow label="ولي الأمر" value={student.guardian_name ?? '—'} />
-            <InfoRow
-              label="هاتف ولي الأمر"
-              value={
-                student.guardian_phone ?? (
-                  <span className="text-warning">غير مسجّل — لن تصله الرسائل</span>
-                )
-              }
-            />
-            <InfoRow label="حالة الطالب" value={STUDENT_STATUS_AR[student.status]} />
-            <InfoRow label="الصف / الشعبة" value={classLabel ?? 'غير مسجّل'} />
-            <InfoRow label="العام الدراسي" value={enrollment?.academic_year?.label ?? '—'} />
-            <InfoRow
-              label="تاريخ التسجيل"
-              value={enrollment ? formatDate(enrollment.created_at) : '—'}
-            />
-            <InfoRow label="تاريخ الإضافة" value={formatDate(student.created_at)} />
-          </dl>
-        </CardContent>
-      </Card>
+      {header}
 
       <SectionKpis items={kpis} className="lg:grid-cols-5" />
 

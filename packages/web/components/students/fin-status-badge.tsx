@@ -15,6 +15,13 @@ const STUDENT_LABEL: Record<FinStatus, string> = {
   unpaid: 'لم يسدد',
 };
 
+/** Fee standing for indicator-only callers: no amounts, no dates (spec 002). */
+const INDICATOR_LABEL: Partial<Record<FinStatus, string>> = {
+  paid: 'مدفوع',
+  partial: 'مدفوع جزئياً',
+  unpaid: 'غير مدفوع',
+};
+
 const INSTALLMENT_LABEL: Record<InstallmentStatus, string> = {
   paid: 'مسدد',
   partial: 'جزئي',
@@ -36,7 +43,7 @@ export function FinStatusBadge({
   className,
 }: {
   status: FinStatus | InstallmentStatus | null;
-  variant?: 'student' | 'installment';
+  variant?: 'student' | 'installment' | 'indicator';
   className?: string;
 }) {
   // Null means the student has no installments at all — not a financial state.
@@ -45,7 +52,9 @@ export function FinStatusBadge({
   const label =
     variant === 'installment'
       ? INSTALLMENT_LABEL[status as InstallmentStatus]
-      : STUDENT_LABEL[status as FinStatus];
+      : variant === 'indicator'
+        ? INDICATOR_LABEL[status as FinStatus]
+        : STUDENT_LABEL[status as FinStatus];
 
   return (
     <span

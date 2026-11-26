@@ -1,3 +1,4 @@
+import { requirePermission } from '../../../../../lib/auth/guard.js';
 import { notFound } from 'next/navigation';
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server.js';
 import { EnrollForm } from '../../../../../components/students/enroll-form.js';
@@ -19,6 +20,7 @@ interface YearRow {
 
 /** Enroll a student — DB trigger generates installments (US2, FR-018). */
 export default async function EnrollPage({ params }: { params: { studentId: string } }) {
+  await requirePermission('students.write');
   const supabase = createSupabaseServerClient();
 
   const { data: student } = await supabase

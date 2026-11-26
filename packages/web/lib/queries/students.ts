@@ -21,16 +21,19 @@ export interface StudentDirectoryRow {
   section_id: string | null;
   section_name: string | null;
   academic_year_id: string | null;
-  total_charged: string;
-  total_paid: string;
-  total_discount: string;
-  total_owed: string;
-  overdue_amount: string;
-  days_overdue: number;
+  // Spec 002: the finance columns are NULL without `finance.read`, and
+  // fin_status is NULL without `finance.read` or `students.fee_indicator`
+  // (indicator-only callers get paid / partial / unpaid).
+  total_charged: string | null;
+  total_paid: string | null;
+  total_discount: string | null;
+  total_owed: string | null;
+  overdue_amount: string | null;
+  days_overdue: number | null;
   next_due_date: string | null;
-  next_due_amount: string;
-  installments_total: number;
-  installments_settled: number;
+  next_due_amount: string | null;
+  installments_total: number | null;
+  installments_settled: number | null;
   fin_status: FinStatus | null;
 }
 

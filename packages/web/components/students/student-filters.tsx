@@ -25,12 +25,18 @@ export function StudentFilters({
   sections,
   years,
   values,
+  finance,
+  indicator,
 }: {
   stages: Ref[];
   grades: Ref[];
   sections: Ref[];
   years: Ref[];
   values: Record<string, string | undefined>;
+  /** `finance.read`: every finance filter and the money sorts. */
+  finance: boolean;
+  /** Fee indicator only: the three-state fee filter, no due dates or overdue. */
+  indicator: boolean;
 }) {
   const stageId = values.stageId;
   const gradeId = values.gradeId;
@@ -60,35 +66,52 @@ export function StudentFilters({
         { value: 'graduated', label: 'متخرج' },
       ],
     },
-    {
-      kind: 'select',
-      key: 'fin',
-      placeholder: 'كل الحالات المالية',
-      options: [
-        { value: 'overdue', label: 'متأخر السداد' },
-        { value: 'partial', label: 'سداد جزئي' },
-        { value: 'unpaid', label: 'لم يسدد' },
-        { value: 'paid', label: 'مسدد بالكامل' },
-      ],
-    },
-    {
-      kind: 'select',
-      key: 'due',
-      placeholder: 'كل مواعيد الاستحقاق',
-      options: [
-        { value: '7', label: 'مستحق خلال ٧ أيام' },
-        { value: '30', label: 'مستحق خلال ٣٠ يوماً' },
-      ],
-    },
-    {
-      kind: 'select',
-      key: 'sort',
-      placeholder: 'ترتيب حسب الاسم',
-      options: [
-        { value: 'owed_desc', label: 'الأكثر مديونية' },
-        { value: 'oldest_overdue', label: 'الأقدم تأخراً' },
-      ],
-    },
+    ...(finance
+      ? ([
+          {
+            kind: 'select',
+            key: 'fin',
+            placeholder: 'كل الحالات المالية',
+            options: [
+              { value: 'overdue', label: 'متأخر السداد' },
+              { value: 'partial', label: 'سداد جزئي' },
+              { value: 'unpaid', label: 'لم يسدد' },
+              { value: 'paid', label: 'مسدد بالكامل' },
+            ],
+          },
+          {
+            kind: 'select',
+            key: 'due',
+            placeholder: 'كل مواعيد الاستحقاق',
+            options: [
+              { value: '7', label: 'مستحق خلال ٧ أيام' },
+              { value: '30', label: 'مستحق خلال ٣٠ يوماً' },
+            ],
+          },
+          {
+            kind: 'select',
+            key: 'sort',
+            placeholder: 'ترتيب حسب الاسم',
+            options: [
+              { value: 'owed_desc', label: 'الأكثر مديونية' },
+              { value: 'oldest_overdue', label: 'الأقدم تأخراً' },
+            ],
+          },
+        ] satisfies FilterControl[])
+      : indicator
+        ? ([
+            {
+              kind: 'select',
+              key: 'fin',
+              placeholder: 'كل حالات الرسوم',
+              options: [
+                { value: 'paid', label: 'مدفوع' },
+                { value: 'partial', label: 'مدفوع جزئياً' },
+                { value: 'unpaid', label: 'غير مدفوع' },
+              ],
+            },
+          ] satisfies FilterControl[])
+        : []),
     { kind: 'toggle', key: 'unenrolled', label: 'غير مسجّل' },
     { kind: 'toggle', key: 'nophone', label: 'بدون رقم هاتف' },
   ];

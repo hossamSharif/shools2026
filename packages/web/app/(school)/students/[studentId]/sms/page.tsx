@@ -1,3 +1,4 @@
+import { hasPermission, requirePermission } from '../../../../../lib/auth/guard.js';
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server.js';
 import { ManualReminderButton } from '../../../../../components/sms/manual-reminder-button.js';
 import {
@@ -11,6 +12,7 @@ export default async function StudentSmsPage({
 }: {
   params: { studentId: string };
 }) {
+  const ctx = await requirePermission('finance.read');
   const supabase = createSupabaseServerClient();
 
   const { data: student } = await supabase
@@ -32,7 +34,9 @@ export default async function StudentSmsPage({
     <div dir="rtl" className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">رسائل الطالب: {student?.name ?? ''}</h1>
-        <ManualReminderButton studentId={params.studentId} />
+        {hasPermission(ctx, 'sms.send_manual') ? (
+          <ManualReminderButton studentId={params.studentId} />
+        ) : null}
       </div>
 
       <StudentSmsTable data={rows} />

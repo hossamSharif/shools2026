@@ -1,3 +1,4 @@
+import { requirePermission } from '../../../../../lib/auth/guard.js';
 import { notFound } from 'next/navigation';
 import { createSupabaseServerClient } from '../../../../../lib/supabase/server.js';
 import { studentInstallments } from '../../../../../lib/queries/balances.js';
@@ -5,6 +6,7 @@ import { DiscountForm } from '../../../../../components/money/discount-form.js';
 
 /** Apply a discount to a student (US4). */
 export default async function DiscountPage({ params }: { params: { studentId: string } }) {
+  await requirePermission('finance.write');
   const supabase = createSupabaseServerClient();
   const { data: student } = await supabase
     .from('student')

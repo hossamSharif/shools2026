@@ -6,13 +6,9 @@ import type { StudentDirectoryRow, FinStatus } from '../queries/students.js';
  * `receivables-export.ts` (same escaping and BOM convention).
  */
 
-const HEADERS = [
-  'الطالب',
-  'ولي الأمر',
-  'الهاتف',
-  'الصف',
-  'الشعبة',
-  'حالة الطالب',
+const BASE_HEADERS = ['الطالب', 'ولي الأمر', 'الهاتف', 'الصف', 'الشعبة', 'حالة الطالب'];
+
+const FINANCE_HEADERS = [
   'إجمالي الرسوم',
   'الخصومات',
   'المدفوع',
@@ -23,6 +19,19 @@ const HEADERS = [
   'مبلغ الاستحقاق القادم',
   'الحالة المالية',
 ];
+
+/** Indicator-only fee standing (spec 002): no amounts, no dates. */
+const INDICATOR_LABEL_AR: Partial<Record<FinStatus, string>> = {
+  paid: 'مدفوع',
+  partial: 'مدفوع جزئياً',
+  unpaid: 'غير مدفوع',
+};
+
+/** Which columns the caller may export (spec 002, T068); mirrors the directory's NULLs. */
+export interface StudentsCsvOptions {
+  finance: boolean;
+  indicator: boolean;
+}
 
 const STATUS_LABEL_AR: Record<StudentDirectoryRow['status'], string> = {
   active: 'نشط',
@@ -44,31 +53,47 @@ function escapeCsv(value: string): string {
   return value;
 }
 
-/** UTF-8 (BOM-prefixed, Excel-friendly) CSV for the current filtered view. */
-export function studentsToCsv(rows: StudentDirectoryRow[]): string {
-  const lines = [HEADERS.join(',')];
+/**
+ * UTF-8 (BOM-prefixed, Excel-friendly) CSV for the current filtered view.
+ * Without `finance.read` the finance columns are left out entirely (the
+ * directory returns them NULL); with the fee indicator only, a single
+ * three-state "حالة الرسوم" column is added.
+ */
+export function studentsToCsv(
+  rows: StudentDirectoryRow[],
+  opts: StudentsCsvOptions = { finance: true, indicator: true },
+): string {
+  const headers = opts.finance
+    ? [...BASE_HEADERS, ...FINANCE_HEADERS]
+    : opts.indicator
+      ? [...BASE_HEADERS, 'حالة الرسوم']
+      : BASE_HEADERS;
+  const lines = [headers.join(',')];
   for (const r of rows) {
-    lines.push(
-      [
-        r.name,
-        r.guardian_name ?? '',
-        r.guardian_phone ?? '',
-        r.grade_label ?? '',
-        r.section_name ?? '',
-        STATUS_LABEL_AR[r.status],
-        r.total_charged,
-        r.total_discount,
-        r.total_paid,
-        r.total_owed,
-        r.overdue_amount,
-        r.days_overdue,
-        r.next_due_date ?? '',
-        r.next_due_amount,
-        r.fin_status ? FIN_LABEL_AR[r.fin_status] : '',
-      ]
-        .map((v) => escapeCsv(String(v)))
-        .join(','),
-    );
+    const base: unknown[] = [
+      r.name,
+      r.guardian_name ?? '',
+      r.guardian_phone ?? '',
+      r.grade_label ?? '',
+      r.section_name ?? '',
+      STATUS_LABEL_AR[r.status],
+    ];
+    const tail: unknown[] = opts.finance
+      ? [
+          r.total_charged,
+          r.total_discount,
+          r.total_paid,
+          r.total_owed,
+          r.overdue_amount,
+          r.days_overdue,
+          r.next_due_date ?? '',
+          r.next_due_amount,
+          r.fin_status ? FIN_LABEL_AR[r.fin_status] : '',
+        ]
+      : opts.indicator
+        ? [r.fin_status ? (INDICATOR_LABEL_AR[r.fin_status] ?? '') : '']
+        : [];
+    lines.push([...base, ...tail].map((v) => escapeCsv(String(v ?? ''))).join(','));
   }
-  return `﻿${lines.join('\n')}`;
+  return `\ufeff${lines.join('\n')}`;
 }

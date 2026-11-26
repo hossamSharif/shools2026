@@ -78,3 +78,15 @@ export const EnrollStudentInput = z.object({
   academic_year_id: Uuid,
 });
 export type EnrollStudentInput = z.infer<typeof EnrollStudentInput>;
+
+/** register_student (spec 002): student fields + the enrollment, one transaction. */
+export const RegisterStudentInput = StudentInput.pick({
+  name: true,
+  guardian_name: true,
+  guardian_phone: true,
+}).extend({
+  grade_id: Uuid,
+  section_id: Uuid,
+  academic_year_id: Uuid,
+});
+export type RegisterStudentInput = z.infer<typeof RegisterStudentInput>;

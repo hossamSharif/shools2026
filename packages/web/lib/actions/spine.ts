@@ -8,9 +8,11 @@ import {
   AccountInput,
   FeeStructureInput,
   EnrollStudentInput,
+  RegisterStudentInput,
 } from '@erp/shared/schemas';
 import { createSupabaseServerClient } from '../supabase/server.js';
 import { requirePermission } from '../auth/guard.js';
+import { throwAccessError } from '../auth/access-errors.js';
 
 /**
  * Light CRUD for the school spine (US2). No money math in JS (Article VI) —
@@ -261,4 +263,39 @@ export async function enrollStudent(input: {
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/students/${v.student_id}`);
+}
+
+/**
+ * Register + enroll in one transaction (spec 002, T068) through
+ * `register_student`. This is the path for stage-scoped writers, who cannot
+ * insert a bare student: Postgres checks `students.write`, the grade's stage
+ * against the caller's scope, the school and write gating, and the enrollment
+ * trigger generates the installments as for any enrollment.
+ */
+export async function registerStudent(input: {
+  name: string;
+  guardian_name?: string;
+  guardian_phone?: string;
+  grade_id: string;
+  section_id: string;
+  academic_year_id: string;
+}): Promise<{ id: string }> {
+  const { supabase } = await schoolCtx('students.write');
+  const v = RegisterStudentInput.parse(input);
+  const { data, error } = await supabase.rpc('register_student', {
+    p_student: {
+      name: v.name,
+      guardian_name: v.guardian_name ?? null,
+      guardian_phone: v.guardian_phone ?? null,
+    },
+    p_enrollment: {
+      grade_id: v.grade_id,
+      section_id: v.section_id,
+      academic_year_id: v.academic_year_id,
+    },
+  });
+  if (error) await throwAccessError(error);
+  if (typeof data !== 'string') throw new Error('failed to register');
+  revalidatePath('/students');
+  return { id: data };
 }
